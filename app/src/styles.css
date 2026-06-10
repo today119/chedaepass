@@ -120,3 +120,76 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 .silgi-jong-detail { font-size: 11px; color: #065f46; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; }
 .silgi-warn { color: #b45309; }
 .silgi-foot { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+
+/* ===== 햄버거 드로어 레이아웃 ===== */
+.hamburger { border: 1px solid var(--line); background: #fff; width: 40px; height: 40px; border-radius: 10px; font-size: 18px; cursor: pointer; color: #374151; flex-shrink: 0; }
+.hamburger:hover { border-color: var(--brand); }
+.topbar { gap: 12px; }
+.brand { flex: 1; }
+.search-wrap { display: flex; gap: 8px; align-items: center; }
+.filter-btn { border: 1.5px solid var(--line); background: #fff; border-radius: 12px; padding: 0 16px; height: 48px; font-size: 14px; font-weight: 600; color: #475569; cursor: pointer; white-space: nowrap; }
+.filter-btn:hover { border-color: var(--brand); }
+.hint-profile { margin-left: auto; font-size: 12px; color: #b45309; }
+
+.drawer-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.4); opacity: 0; visibility: hidden; transition: .2s; z-index: 40; }
+.drawer-overlay.show { opacity: 1; visibility: visible; }
+.drawer { position: fixed; top: 0; left: 0; height: 100%; width: 340px; max-width: 88vw; background: #fff; box-shadow: 4px 0 24px rgba(0,0,0,.12); transform: translateX(-100%); transition: transform .22s ease; z-index: 50; display: flex; flex-direction: column; }
+.drawer.open { transform: translateX(0); }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line); font-weight: 800; font-size: 15px; }
+.drawer-x { border: none; background: none; font-size: 18px; cursor: pointer; color: var(--muted); }
+.drawer-body { padding: 14px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.drawer .filter-label { width: 56px; }
+
+/* ===== 학생 프로필 카드 ===== */
+.pf-card { margin-top: 6px; border: 1px solid #bfdbfe; background: #f5f9ff; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+.pf-title { font-size: 14px; font-weight: 800; color: #1d4ed8; }
+.pf-sub { font-size: 11px; font-weight: 600; color: var(--muted); }
+.pf-row { display: flex; gap: 6px; }
+.pf-name { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 13px; }
+.pf-row select { border: 1px solid var(--line); border-radius: 8px; padding: 7px 6px; font-size: 13px; background: #fff; }
+.pf-grades { display: flex; align-items: center; gap: 5px; }
+.pf-gl { font-size: 12px; font-weight: 700; color: #475569; width: 30px; flex-shrink: 0; }
+.pf-gi { display: flex; flex-direction: column; align-items: center; }
+.pf-gi label { font-size: 10px; color: var(--muted); }
+.pf-gi input { width: 38px; text-align: center; border: 1px solid var(--line); border-radius: 7px; padding: 5px 2px; font-size: 13px; }
+.pf-gi input:focus { border-color: var(--brand); outline: none; }
+.pf-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* ===== 종점 자동 환산 ===== */
+.badge-precise { font-size: 10px; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #6ee7b7; border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
+.sc-auto { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-pill { font-size: 11.5px; font-weight: 600; background: #eef2f7; color: #374151; border-radius: 8px; padding: 4px 9px; display: inline-flex; align-items: center; gap: 5px; }
+.sc-pill--off { color: var(--muted); background: #f8fafc; }
+.sc-pill em { font-style: normal; font-size: 9.5px; font-weight: 700; border-radius: 5px; padding: 1px 4px; }
+.sc-pre { background: #d1fae5; color: #047857; }
+.sc-apx { background: #fef3c7; color: #b45309; }
+.sc-need { font-size: 12px; color: var(--muted); background: #f8fafc; border-radius: 8px; padding: 7px 10px; text-align: center; }
+.sc-save { display: flex; gap: 6px; align-items: center; }
+.sc-memo { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 12.5px; }
+.sc-save-btn { border: 1px solid var(--brand); background: var(--brand); color: #fff; border-radius: 8px; padding: 7px 11px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.sc-saved { font-size: 12px; color: #047857; font-weight: 700; }
+
+/* ===== 상담일지 ===== */
+.log { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; pointer-events: none; }
+.log-tab { pointer-events: auto; position: absolute; right: 20px; bottom: 12px; border: 1px solid var(--line); background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.12); border-radius: 999px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; color: #374151; }
+.log-tab b { color: #fff; background: var(--brand); border-radius: 999px; padding: 0 7px; margin: 0 3px; font-size: 12px; }
+.log--open .log-body { pointer-events: auto; }
+.log-body { pointer-events: auto; position: absolute; right: 20px; bottom: 56px; width: min(680px, 92vw); max-height: 60vh; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.18); padding: 14px; }
+.log-tools { display: flex; gap: 8px; margin-bottom: 10px; }
+.log-tools button, .log-import { border: 1px solid var(--line); background: #f8fafc; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; color: #374151; }
+.log-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
+.log-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.log-table th { text-align: left; color: var(--muted); font-size: 11px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.log-table td { padding: 6px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+.log-jeon { font-size: 11.5px; }
+.log-t { display: block; font-size: 10px; color: var(--muted); }
+.log-score { font-weight: 800; color: var(--brand); }
+.log-memo { color: #4b5566; }
+.log-del { border: none; background: none; color: #cbd5e1; cursor: pointer; font-size: 13px; }
+.log-del:hover { color: #ef4444; }
+
+@media (max-width: 640px) {
+  .app { padding: 0 12px 60px; }
+  .grid { grid-template-columns: 1fr; }
+  .brand { font-size: 18px; }
+}
