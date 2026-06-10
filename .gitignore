@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+app/node_modules/
+
+# build output
+dist/
+app/dist/
+
+# python
+__pycache__/
+*.pyc
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 원본 자료 (저작권/용량 — 저장소에 올리지 않음)
+*.pdf
+*.xlsx
