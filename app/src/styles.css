@@ -216,8 +216,8 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 
 /* ===== push 드로어: 햄버거 열어도 카드 활성 ===== */
 @media (min-width: 1000px) {
-  .app { transition: padding-left .22s ease; }
-  .app--shift { padding-left: 372px; max-width: none; margin: 0; }
+  .app { transition: margin-left .22s ease, margin-right .22s ease; }
+  .app--shift { margin-left: 372px; margin-right: 20px; max-width: none; }
   .app--shift .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .app--shift .drawer-overlay { background: transparent; pointer-events: none; }
 }
