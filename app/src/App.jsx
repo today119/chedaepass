@@ -430,31 +430,33 @@ function Drawer({ open, onClose, filters, profile, setProfile }) {
           <button className="drawer-x" onClick={onClose}>✕</button>
         </div>
         <div className="drawer-body">
-          <div className="filter-group"><span className="filter-label">학생 성별</span>
-            {['전체', '남', '여'].map(g => <Chip key={g} active={gender === g} onClick={() => setGender(g)}>{g === '남' ? '남(여대 제외)' : g}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">모집시기</span>
-            {['전체', '수시', '정시'].map(t => <Chip key={t} active={type === t} onClick={() => setType(t)}>{t}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">전형유형</span>
-            {TYPE_FILTERS.map(t => <Chip key={t} active={types.includes(t)} onClick={() => toggle(types, setTypes, t)}>{t}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">학과계열</span>
-            {SERIES_KEYS.map(s => <Chip key={s} active={series.includes(s)} onClick={() => toggle(series, setSeries, s)}>{s}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">실기비중</span>
-            {SILGI_BANDS.map(s => <Chip key={s} active={silgi.includes(s)} onClick={() => toggle(silgi, setSilgi, s)}>{s}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">지역</span>
-            {SUSI_REGIONS.map(r => <Chip key={r} active={regions.includes(r)} onClick={() => toggle(regions, setRegions, r)}>{r}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">설립</span>
-            {['전체', '국공립', '사립'].map(e => <Chip key={e} active={estab === e} onClick={() => setEstab(e)}>{e}</Chip>)}
-          </div>
-          <div className="filter-group"><span className="filter-label">실기종목</span>
-            {JONGMOK_KEYS.map(j => <Chip key={j.key} active={jongmok.includes(j.key)} onClick={() => toggle(jongmok, setJongmok, j.key)}>{j.key}</Chip>)}
-          </div>
           <ProfileCard profile={profile} setProfile={setProfile} />
+
+          <div className="drawer-sec">🔍 검색 필터</div>
+          <div className="fgroup"><span className="fl">학생 성별</span>
+            <div className="fchips">{['전체', '남', '여'].map(g => <Chip key={g} active={gender === g} onClick={() => setGender(g)}>{g === '남' ? '남(여대 제외)' : g}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">모집시기</span>
+            <div className="fchips">{['전체', '수시', '정시'].map(t => <Chip key={t} active={type === t} onClick={() => setType(t)}>{t}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">전형유형</span>
+            <div className="fchips">{TYPE_FILTERS.map(t => <Chip key={t} active={types.includes(t)} onClick={() => toggle(types, setTypes, t)}>{t}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">학과 계열</span>
+            <div className="fchips">{SERIES_KEYS.map(s => <Chip key={s} active={series.includes(s)} onClick={() => toggle(series, setSeries, s)}>{s}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">실기 비중</span>
+            <div className="fchips">{SILGI_BANDS.map(s => <Chip key={s} active={silgi.includes(s)} onClick={() => toggle(silgi, setSilgi, s)}>{s}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">실기 종목</span>
+            <div className="fchips">{JONGMOK_KEYS.map(j => <Chip key={j.key} active={jongmok.includes(j.key)} onClick={() => toggle(jongmok, setJongmok, j.key)}>{j.key}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">지역</span>
+            <div className="fchips">{SUSI_REGIONS.map(r => <Chip key={r} active={regions.includes(r)} onClick={() => toggle(regions, setRegions, r)}>{r}</Chip>)}</div>
+          </div>
+          <div className="fgroup"><span className="fl">설립 구분</span>
+            <div className="fchips">{['전체', '국공립', '사립'].map(e => <Chip key={e} active={estab === e} onClick={() => setEstab(e)}>{e}</Chip>)}</div>
+          </div>
         </div>
       </aside>
     </>
