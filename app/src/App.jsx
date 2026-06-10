@@ -1,5 +1,15 @@
 import React, { useMemo, useState } from 'react'
 import raw from './data/admissions.json'
+import { silgiScore, silgiEventsOf, scorableUniversities } from './data/silgiScore.js'
+
+// 채점표는 있으나 라벨 보정이 필요한 대학 (silgi_scoring.json 22개 − 즉시사용 10개).
+// 이 대학들은 추후 채점 자동화 예정 → 현재는 안내만 표시.
+const PENDING_SILGI_UNIVS = new Set([
+  '상명대학교', '서울시립대학교', '숭실대학교', '한국외국어대학교', '남서울대학교',
+  '단국대학교(천안)', '서원대학교', '선문대학교', '경상대학교', '동의대학교',
+  '부경대학교', '제주대학교',
+])
+const SCORABLE_SET = new Set(scorableUniversities)
 
 // ---------- 데이터 정규화 ----------
 const ALL = [...raw.susi, ...raw.jeongsi]
@@ -130,8 +140,128 @@ function RatioBar({ rec }) {
   )
 }
 
+// 이 모집단위에 실기 전형요소가 있는지
+function hasSilgi(rec) {
+  if (parsePct(rec.실기비율) > 0) return true
+  const jm = rec.실기종목 || []
+  return jm.length > 0 && !jm.every(j => /무실기/.test(j))
+}
+
+// ---------- 실기 환산 · 종점 계산기 ----------
+function SilgiCalculator({ rec }) {
+  const univ = rec.대학
+  const scorable = SCORABLE_SET.has(univ)
+  const [gender, setGender] = useState('남')
+  const [records, setRecords] = useState({})  // { 종목: 입력문자열 }
+  const [naesin, setNaesin] = useState('')     // 내신 환산점수 (0~100, 선택입력)
+  const [suneung, setSuneung] = useState('')   // 수능 환산점수 (0~100, 선택입력)
+
+  // 이 대학·성별에 채점 가능한 종목 (성별무관(null) 포함, 종목명으로 중복제거)
+  const events = useMemo(() => {
+    if (!scorable) return []
+    const all = silgiEventsOf(univ).filter(e => e.성별 === gender || e.성별 == null)
+    const map = new Map()
+    for (const e of all) if (!map.has(e.종목)) map.set(e.종목, e)
+    return [...map.values()]
+  }, [univ, gender, scorable])
+
+  if (!scorable) {
+    const pending = PENDING_SILGI_UNIVS.has(univ)
+    return (
+      <div className="silgi-box silgi-box--na">
+        <div className="silgi-na">
+          {pending
+            ? '🛠 이 대학 채점표는 보유했으나 라벨 보정 작업 중 — 자동 환산은 추후 지원 예정입니다. 현재는 수기 계산이 필요합니다.'
+            : '📄 이 대학의 실기 채점표는 아직 미보유 — 자동 환산을 지원하지 않습니다. 모집요강의 채점 기준으로 수기 계산하세요.'}
+        </div>
+      </div>
+    )
+  }
+
+  // 종목별 환산점수
+  const scored = events.map(ev => {
+    const v = records[ev.종목] ?? ''
+    const num = v === '' ? null : parseFloat(v)
+    const r = num == null || isNaN(num) ? null : silgiScore(univ, gender, ev.종목, num)
+    return { 종목: ev.종목, dir: ev.dir, input: v, score: r && r.ok ? r.score : null }
+  })
+  const got = scored.filter(s => s.score != null).map(s => s.score)
+  const silgiAvg = got.length ? Math.round((got.reduce((a, b) => a + b, 0) / got.length) * 10) / 10 : null
+
+  // 종점(환산총점) 추정 — 영역환산 × 반영비율 가중합
+  const wSilgi = parsePct(rec.실기비율)
+  const wNaesin = parsePct(rec.내신비율)
+  const wSuneung = parsePct(rec.수능비율)
+  const parts = []
+  if (wSilgi > 0 && silgiAvg != null) parts.push(['실기', silgiAvg, wSilgi])
+  if (wNaesin > 0 && naesin !== '' && !isNaN(parseFloat(naesin))) parts.push(['내신', parseFloat(naesin), wNaesin])
+  if (wSuneung > 0 && suneung !== '' && !isNaN(parseFloat(suneung))) parts.push(['수능', parseFloat(suneung), wSuneung])
+  const jongjeom = parts.length ? Math.round(parts.reduce((a, [, val, p]) => a + (val * p) / 100, 0) * 10) / 10 : null
+  const coveredPct = parts.reduce((a, [, , p]) => a + p, 0)
+  const totalWeight = wSilgi + wNaesin + wSuneung
+
+  return (
+    <div className="silgi-box">
+      <div className="silgi-gender">
+        <span className="silgi-label">성별</span>
+        {['남', '여'].map(g => (
+          <button key={g} className={'chip chip--sm' + (gender === g ? ' chip--on' : '')} onClick={() => setGender(g)}>{g}</button>
+        ))}
+      </div>
+
+      <div className="silgi-events">
+        {events.map(ev => {
+          const s = scored.find(x => x.종목 === ev.종목)
+          return (
+            <div key={ev.종목} className="silgi-row">
+              <label className="silgi-ev">{ev.종목}<span className="silgi-dir">{ev.dir === 'higher' ? '↑클수록' : '↓작을수록'}</span></label>
+              <input
+                className="silgi-input" type="number" inputMode="decimal" placeholder="기록"
+                value={records[ev.종목] ?? ''}
+                onChange={e => setRecords(p => ({ ...p, [ev.종목]: e.target.value }))}
+              />
+              <span className={'silgi-score' + (s && s.score != null ? ' silgi-score--on' : '')}>
+                {s && s.input !== '' ? (s.score != null ? `${s.score}점` : '범위밖') : '—'}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {silgiAvg != null && (
+        <div className="silgi-avg">실기 평균 환산 <b>{silgiAvg}</b>점 <span className="muted">({got.length}종목 기준)</span></div>
+      )}
+
+      {(wNaesin > 0 || wSuneung > 0) && (
+        <div className="silgi-extra">
+          <span className="silgi-label">종점 추정용 (선택)</span>
+          {wNaesin > 0 && (
+            <span className="silgi-extra-in">내신환산<input className="silgi-input silgi-input--xs" type="number" placeholder="0~100" value={naesin} onChange={e => setNaesin(e.target.value)} /></span>
+          )}
+          {wSuneung > 0 && (
+            <span className="silgi-extra-in">수능환산<input className="silgi-input silgi-input--xs" type="number" placeholder="0~100" value={suneung} onChange={e => setSuneung(e.target.value)} /></span>
+          )}
+        </div>
+      )}
+
+      {jongjeom != null && (
+        <div className="silgi-jong">
+          <div className="silgi-jong-head">종점(환산총점) 추정 <b>{jongjeom}</b><span className="muted"> / 100</span></div>
+          <div className="silgi-jong-detail">
+            {parts.map(([k, val, p]) => <span key={k}>{k} {val}×{p}%</span>)}
+            {coveredPct < totalWeight && <span className="silgi-warn">· 미입력 영역 {totalWeight - coveredPct}% 제외 (참고치)</span>}
+          </div>
+        </div>
+      )}
+      <div className="silgi-foot">※ 환산표는 2027 실기자료집 기준. 실기 평균은 입력 종목 단순평균이며 대학 공식 합산식과 다를 수 있습니다.</div>
+    </div>
+  )
+}
+
 function Card({ rec }) {
   const tags = jongmokTags(rec)
+  const [openCalc, setOpenCalc] = useState(false)
+  const showSilgi = hasSilgi(rec)
   const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
   return (
     <div className="card">
@@ -167,6 +297,15 @@ function Card({ rec }) {
 
       {rec.변경사항 && rec.변경사항 !== 'x' && (
         <div className="card-note">📌 {String(rec.변경사항).slice(0, 80)}</div>
+      )}
+
+      {showSilgi && (
+        <>
+          <button className="silgi-toggle" onClick={() => setOpenCalc(o => !o)}>
+            🎯 실기 환산 · 종점 계산 {openCalc ? '▲' : '▼'}
+          </button>
+          {openCalc && <SilgiCalculator rec={rec} />}
+        </>
       )}
     </div>
   )
