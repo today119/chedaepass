@@ -64,6 +64,37 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 /* ---------- 실기 환산 · 종점 계산기 ---------- */
 .silgi-toggle { width: 100%; border: 1px dashed var(--brand); background: #f5f8ff; color: var(--brand); font-weight: 700; font-size: 13px; padding: 8px; border-radius: 10px; cursor: pointer; }
 .silgi-toggle:hover { background: #eaf1ff; }
+/* 채점표 미보유 → 붉은 계열로 비권장 표시 */
+.silgi-toggle--na { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+.silgi-toggle--na:hover { background: #fee2e2; }
+/* 채점표 보유했으나 보정 중 → 주황 계열 */
+.silgi-toggle--pending { border-color: #fcd34d; background: #fffbeb; color: #b45309; }
+.silgi-toggle--pending:hover { background: #fef3c7; }
+.stat-muted { color: var(--muted); font-weight: 600; }
+
+/* 대학 공식 링크 */
+.card-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.ext-link { font-size: 11.5px; font-weight: 600; color: #374151; background: #f1f5f9; border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; text-decoration: none; }
+.ext-link:hover { background: #e2e8f0; }
+.ext-ipsi { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.ext-ipsi:hover { background: #dbeafe; }
+
+/* 어디가 입시결과 */
+.ipg-toggle { width: 100%; border: 1px dashed #94a3b8; background: #f8fafc; color: #475569; font-weight: 700; font-size: 13px; padding: 8px; border-radius: 10px; cursor: pointer; }
+.ipg-toggle:hover { background: #f1f5f9; }
+.ipg-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fbfcfe; display: flex; flex-direction: column; gap: 8px; }
+.ipg-row { border-bottom: 1px solid #eef2f7; padding-bottom: 7px; }
+.ipg-row:last-of-type { border-bottom: none; padding-bottom: 0; }
+.ipg-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.ipg-when { font-size: 10.5px; font-weight: 700; border-radius: 6px; padding: 1px 6px; }
+.ipg-s { background: #dbeafe; color: #1d4ed8; }
+.ipg-j { background: #fee2e2; color: #b91c1c; }
+.ipg-name { font-size: 12px; font-weight: 600; color: #374151; }
+.ipg-nums { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11.5px; color: #4b5566; }
+.ipg-chung { color: #b45309; font-weight: 700; }
+.ipg-cut { font-size: 11.5px; color: #065f46; margin-top: 2px; }
+.ipg-muted { color: var(--muted); }
+.ipg-foot { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
 .silgi-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fbfcfe; display: flex; flex-direction: column; gap: 10px; }
 .silgi-box--na { background: #fffdf6; }
 .silgi-na { font-size: 12px; color: #926b1f; line-height: 1.5; }

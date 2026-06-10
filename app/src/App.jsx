@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import raw from './data/admissions.json'
 import { silgiScore, silgiEventsOf, scorableUniversities } from './data/silgiScore.js'
+import { univLink, ipgyeolFor } from './data/ipgyeolLookup.js'
 
 // 채점표는 있으나 라벨 보정이 필요한 대학 (silgi_scoring.json 22개 − 즉시사용 10개).
 // 이 대학들은 추후 채점 자동화 예정 → 현재는 안내만 표시.
@@ -94,6 +95,26 @@ function jongmokTags(rec) {
   const txt = (rec.실기종목 || []).join(' ')
   const tags = JONGMOK_KEYS.filter(j => j.pat.test(txt)).map(j => j.key)
   return tags
+}
+
+// 수능최저학력기준 — 실제 등급합은 `최저` 필드(문자열). `내신최저`(숫자)와 혼동 금지.
+function suneungMin(rec) {
+  const v = rec.최저
+  if (!v || v === 'x' || v === 'X') return { short: '없음', full: '' }
+  const s = String(v)
+  const taek = (s.match(/택\s*(\d+)/) || [])[1]
+  const hap = (s.match(/합\s*(\d+)/) || [])[1]
+  const each = (s.match(/각\s*(\d+)등급|과목별\s*(\d+)등급/) || []).slice(1).find(Boolean)
+  let short
+  if (hap) short = taek ? `${taek}개 합${hap}` : `합${hap}`
+  else if (each) short = `각 ${each}등급`
+  else short = '있음'
+  return { short, full: s }
+}
+
+// 여자대학교 식별 (남학생 상담 시 배제용)
+function isWomensUniv(name) {
+  return /여자대학교|여대|여자대$/.test(name || '')
 }
 
 const SUSI_REGIONS = [...new Set(ALL.map(r => bigRegion(regionOf(r))))].sort()
@@ -258,11 +279,53 @@ function SilgiCalculator({ rec }) {
   )
 }
 
+// ---------- 어디가 전년 입시결과 ----------
+function cutText(arr, suffix) {
+  if (!arr) return null
+  const c50 = arr[0], c70 = arr[1]
+  if (c50 == null && c70 == null) return null
+  const p = (v) => (v == null ? '–' : v + suffix)
+  return `50%컷 ${p(c50)} · 70%컷 ${p(c70)}`
+}
+function IpgyeolBlock({ rows }) {
+  return (
+    <div className="ipg-box">
+      {rows.map((t, i) => {
+        const sb = cutText(t.학생부환산등급컷, '등급')
+        const su = cutText(t.수능평균백분위컷, '')
+        return (
+          <div key={i} className="ipg-row">
+            <div className="ipg-head">
+              <span className={'ipg-when ' + (t.모집시기?.startsWith('정시') ? 'ipg-j' : 'ipg-s')}>{t.모집시기}</span>
+              <span className="ipg-name">{t.전형명}</span>
+            </div>
+            <div className="ipg-nums">
+              {t.모집인원 != null && <span>모집 {t.모집인원}</span>}
+              {t.경쟁률 != null && <span>경쟁 {t.경쟁률}:1</span>}
+              {t.충원인원 != null && <span className="ipg-chung">추합 {t.충원인원}순위</span>}
+            </div>
+            {sb && <div className="ipg-cut">학생부 {sb}</div>}
+            {su && <div className="ipg-cut">수능 평균백분위 {su}</div>}
+            {!sb && !su && <div className="ipg-cut ipg-muted">합격선 비공개(3명↓ 또는 미공개)</div>}
+          </div>
+        )
+      })}
+      <div className="ipg-foot">※ 어디가 전년도(2026) 입시결과 · 충원순위=마지막 추가합격 순위 · 80/90/100%컷은 대학 선택공개</div>
+    </div>
+  )
+}
+
 function Card({ rec }) {
   const tags = jongmokTags(rec)
   const [openCalc, setOpenCalc] = useState(false)
+  const [openIpg, setOpenIpg] = useState(false)
   const showSilgi = hasSilgi(rec)
   const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
+  const sm = suneungMin(rec)
+  const scorable = SCORABLE_SET.has(rec.대학)
+  const pending = PENDING_SILGI_UNIVS.has(rec.대학)
+  const link = univLink(rec.대학)
+  const ipgy = ipgyeolFor(rec.대학, rec.학과, rec.type)
   return (
     <div className="card">
       <div className="card-top">
@@ -285,7 +348,7 @@ function Card({ rec }) {
       <div className="card-stats">
         <div><b>{rec.모집2028 ?? '-'}</b><span>모집인원</span></div>
         <div><b>{rec.경쟁률 ?? rec.경쟁률2027 ?? '-'}</b><span>경쟁률(전년)</span></div>
-        <div><b>{rec.내신최저 ?? (rec.최저 && rec.최저 !== 'x' ? '있음' : '-')}</b><span>수능최저</span></div>
+        <div title={sm.full}><b className={sm.short === '없음' ? 'stat-muted' : ''}>{sm.short}</b><span>수능최저</span></div>
         <div><b>{rec.국공사립 || (rec.type === '정시' ? '-' : '-')}</b><span>설립</span></div>
       </div>
 
@@ -299,10 +362,34 @@ function Card({ rec }) {
         <div className="card-note">📌 {String(rec.변경사항).slice(0, 80)}</div>
       )}
 
+      {link && (link.입시홈페이지 || link.홈페이지) && (
+        <div className="card-links">
+          {link.입시홈페이지 && (
+            <a className="ext-link ext-ipsi" href={/^https?:/.test(link.입시홈페이지) ? link.입시홈페이지 : 'https://' + link.입시홈페이지} target="_blank" rel="noreferrer">🎓 입시홈페이지(환산표)</a>
+          )}
+          {link.홈페이지 && (
+            <a className="ext-link" href={/^https?:/.test(link.홈페이지) ? link.홈페이지 : 'https://' + link.홈페이지} target="_blank" rel="noreferrer">🏫 홈페이지</a>
+          )}
+        </div>
+      )}
+
+      {ipgy && (
+        <>
+          <button className="ipg-toggle" onClick={() => setOpenIpg(o => !o)}>
+            📊 어디가 전년 입시결과 · 충원 {openIpg ? '▲' : '▼'}
+          </button>
+          {openIpg && <IpgyeolBlock rows={ipgy} />}
+        </>
+      )}
+
       {showSilgi && (
         <>
-          <button className="silgi-toggle" onClick={() => setOpenCalc(o => !o)}>
-            🎯 실기 환산 · 종점 계산 {openCalc ? '▲' : '▼'}
+          <button
+            className={'silgi-toggle' + (scorable ? '' : pending ? ' silgi-toggle--pending' : ' silgi-toggle--na')}
+            onClick={() => setOpenCalc(o => !o)}
+          >
+            🎯 실기 환산 · 종점 계산
+            {!scorable && (pending ? ' (보정 중)' : ' (채점표 미보유)')} {openCalc ? '▲' : '▼'}
           </button>
           {openCalc && <SilgiCalculator rec={rec} />}
         </>
@@ -320,6 +407,7 @@ export default function App() {
   const [types, setTypes] = useState([])      // 전형유형
   const [series, setSeries] = useState([])    // 학과 계열
   const [silgi, setSilgi] = useState([])      // 실기비중
+  const [gender, setGender] = useState('전체') // 학생 성별 (남 → 여대 배제)
 
   function toggle(list, setList, v) {
     setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v])
@@ -329,6 +417,7 @@ export default function App() {
     const qq = q.trim()
     return ALL.filter(r => {
       if (type !== '전체' && r.type !== type) return false
+      if (gender === '남' && isWomensUniv(r.대학)) return false
       if (regions.length && !regions.includes(bigRegion(regionOf(r)))) return false
       if (series.length && !series.includes(seriesOf(r))) return false
       if (types.length && !types.includes(admissionType(r))) return false
@@ -345,7 +434,7 @@ export default function App() {
       if (qq && !(`${r.대학} ${r.학과} ${r.전형 || ''}`.includes(qq))) return false
       return true
     })
-  }, [q, type, regions, jongmok, estab, types, series, silgi])
+  }, [q, type, regions, jongmok, estab, types, series, silgi, gender])
 
   return (
     <div className="app">
@@ -364,6 +453,12 @@ export default function App() {
       </div>
 
       <div className="filters">
+        <div className="filter-group">
+          <span className="filter-label">학생 성별</span>
+          {['전체', '남', '여'].map(g => (
+            <Chip key={g} active={gender === g} onClick={() => setGender(g)}>{g === '남' ? '남(여대 제외)' : g}</Chip>
+          ))}
+        </div>
         <div className="filter-group">
           <span className="filter-label">모집시기</span>
           {['전체', '수시', '정시'].map(t => (
@@ -410,8 +505,8 @@ export default function App() {
 
       <div className="results-head">
         <b>{results.length}</b>건 검색됨
-        {(regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length || q) ? (
-          <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]) }}>필터 초기화</button>
+        {(regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length || gender !== '전체' || q) ? (
+          <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]); setGender('전체') }}>필터 초기화</button>
         ) : null}
       </div>
 
