@@ -36,15 +36,16 @@ function parsePct(v) {
   return m ? Math.round(parseFloat(m[1])) : 0
 }
 function admissionType(rec) {
-  if (rec.type === '정시') return '정시'
   const e = rec.전형 || ''
+  if (/특기/.test(e)) return '특기자'
+  if (rec.type === '정시') return '정시'
   if (/종합/.test(e)) return '학생부종합'
   if (/교과/.test(e)) return '학생부교과'
   if (/논술/.test(e)) return '논술'
   if (/실기|실적/.test(e)) return '실기위주'
   return '기타'
 }
-const TYPE_FILTERS = ['학생부교과', '학생부종합', '실기위주', '논술', '정시']
+const TYPE_FILTERS = ['학생부교과', '학생부종합', '실기위주', '특기자', '논술', '정시']
 
 const SERIES = [
   { key: '경호·무도', pat: /경호|무도|무예|보안|태권도/ },
@@ -110,7 +111,18 @@ function hasSilgi(rec) {
   const jm = rec.실기종목 || []
   return jm.length > 0 && !jm.every(j => /무실기/.test(j))
 }
-const SUSI_REGIONS = [...new Set(ALL.map(r => bigRegion(regionOf(r))))].sort()
+// 학과계열 필터 표시 순서 (분류 우선순위와 별개)
+const SERIES_ORDER = ['체육교육', '스포츠과학·체육학', '스포츠의학·재활', '생활·레저·산업', '경호·무도', '노인·복지']
+
+// 지역: 서울·인천·경기는 개별, 그 외는 권역
+function regionKey(rec) {
+  const r = regionOf(rec)
+  if (r.includes('서울')) return '서울'
+  if (r.includes('인천')) return '인천'
+  if (r.includes('경기')) return '경기'
+  return bigRegion(r)
+}
+const REGION_ORDER = ['서울', '인천', '경기', '충청', '경상', '전라', '제주', '강원']
 
 // localStorage 동기화 훅
 function useLocalStorage(key, initial) {
@@ -418,45 +430,56 @@ function Card({ rec, profile, onAddRecord }) {
   )
 }
 
+// ---------- 접이식 필터 그룹 ----------
+function FGroup({ title, defaultOpen = true, count = 0, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className={'fbox' + (open ? ' fbox--open' : '')}>
+      <button className="fbox-head" onClick={() => setOpen(o => !o)}>
+        <span className="fbox-t">{title}{count > 0 && <em className="fbox-cnt">{count}</em>}</span>
+        <span className="fbox-arr">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && <div className="fbox-body"><div className="fchips">{children}</div></div>}
+    </div>
+  )
+}
+
 // ---------- 필터 드로어 ----------
 function Drawer({ open, onClose, filters, profile, setProfile }) {
-  const { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, gender, setGender, toggle } = filters
+  const { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, toggle } = filters
   return (
     <>
       <div className={'drawer-overlay' + (open ? ' show' : '')} onClick={onClose} />
       <aside className={'drawer' + (open ? ' open' : '')}>
         <div className="drawer-head">
-          <span>필터 · 학생</span>
+          <span>학생 · 검색 필터</span>
           <button className="drawer-x" onClick={onClose}>✕</button>
         </div>
         <div className="drawer-body">
           <ProfileCard profile={profile} setProfile={setProfile} />
 
           <div className="drawer-sec">🔍 검색 필터</div>
-          <div className="fgroup"><span className="fl">학생 성별</span>
-            <div className="fchips">{['전체', '남', '여'].map(g => <Chip key={g} active={gender === g} onClick={() => setGender(g)}>{g === '남' ? '남(여대 제외)' : g}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">모집시기</span>
-            <div className="fchips">{['전체', '수시', '정시'].map(t => <Chip key={t} active={type === t} onClick={() => setType(t)}>{t}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">전형유형</span>
-            <div className="fchips">{TYPE_FILTERS.map(t => <Chip key={t} active={types.includes(t)} onClick={() => toggle(types, setTypes, t)}>{t}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">학과 계열</span>
-            <div className="fchips">{SERIES_KEYS.map(s => <Chip key={s} active={series.includes(s)} onClick={() => toggle(series, setSeries, s)}>{s}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">실기 비중</span>
-            <div className="fchips">{SILGI_BANDS.map(s => <Chip key={s} active={silgi.includes(s)} onClick={() => toggle(silgi, setSilgi, s)}>{s}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">실기 종목</span>
-            <div className="fchips">{JONGMOK_KEYS.map(j => <Chip key={j.key} active={jongmok.includes(j.key)} onClick={() => toggle(jongmok, setJongmok, j.key)}>{j.key}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">지역</span>
-            <div className="fchips">{SUSI_REGIONS.map(r => <Chip key={r} active={regions.includes(r)} onClick={() => toggle(regions, setRegions, r)}>{r}</Chip>)}</div>
-          </div>
-          <div className="fgroup"><span className="fl">설립 구분</span>
-            <div className="fchips">{['전체', '국공립', '사립'].map(e => <Chip key={e} active={estab === e} onClick={() => setEstab(e)}>{e}</Chip>)}</div>
-          </div>
+          <FGroup title="모집시기" count={type !== '전체' ? 1 : 0}>
+            {['전체', '수시', '정시'].map(t => <Chip key={t} active={type === t} onClick={() => setType(t)}>{t}</Chip>)}
+          </FGroup>
+          <FGroup title="전형유형" count={types.length}>
+            {TYPE_FILTERS.map(t => <Chip key={t} active={types.includes(t)} onClick={() => toggle(types, setTypes, t)}>{t}</Chip>)}
+          </FGroup>
+          <FGroup title="학과 계열" count={series.length}>
+            {SERIES_ORDER.map(s => <Chip key={s} active={series.includes(s)} onClick={() => toggle(series, setSeries, s)}>{s}</Chip>)}
+          </FGroup>
+          <FGroup title="지역" count={regions.length} defaultOpen={false}>
+            {REGION_ORDER.map(r => <Chip key={r} active={regions.includes(r)} onClick={() => toggle(regions, setRegions, r)}>{r}</Chip>)}
+          </FGroup>
+          <FGroup title="실기 비중" count={silgi.length} defaultOpen={false}>
+            {SILGI_BANDS.map(s => <Chip key={s} active={silgi.includes(s)} onClick={() => toggle(silgi, setSilgi, s)}>{s}</Chip>)}
+          </FGroup>
+          <FGroup title="실기 종목" count={jongmok.length} defaultOpen={false}>
+            {JONGMOK_KEYS.map(j => <Chip key={j.key} active={jongmok.includes(j.key)} onClick={() => toggle(jongmok, setJongmok, j.key)}>{j.key}</Chip>)}
+          </FGroup>
+          <FGroup title="설립 구분" count={estab !== '전체' ? 1 : 0} defaultOpen={false}>
+            {['전체', '국공립', '사립'].map(e => <Chip key={e} active={estab === e} onClick={() => setEstab(e)}>{e}</Chip>)}
+          </FGroup>
         </div>
       </aside>
     </>
@@ -541,8 +564,8 @@ export default function App() {
     const qq = q.trim()
     return ALL.filter(r => {
       if (type !== '전체' && r.type !== type) return false
-      if (gender === '남' && isWomensUniv(r.대학)) return false
-      if (regions.length && !regions.includes(bigRegion(regionOf(r)))) return false
+      if (profile.성별 === '남' && isWomensUniv(r.대학)) return false
+      if (regions.length && !regions.includes(regionKey(r))) return false
       if (series.length && !series.includes(seriesOf(r))) return false
       if (types.length && !types.includes(admissionType(r))) return false
       if (silgi.length && !silgi.includes(silgiBand(r))) return false
@@ -555,14 +578,14 @@ export default function App() {
       if (qq && !(`${r.대학} ${r.학과} ${r.전형 || ''}`.includes(qq))) return false
       return true
     })
-  }, [q, type, regions, jongmok, estab, types, series, silgi, gender])
+  }, [q, type, regions, jongmok, estab, types, series, silgi, profile.성별])
 
-  const activeFilters = (regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length || gender !== '전체')
+  const activeFilters = (regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length)
 
-  const filters = { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, gender, setGender, toggle }
+  const filters = { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, toggle }
 
   return (
-    <div className="app">
+    <div className={'app' + (drawerOpen ? ' app--shift' : '')}>
       <header className="topbar">
         <button className="hamburger" onClick={() => setDrawerOpen(true)} aria-label="필터 열기">☰</button>
         <div className="brand">🏅 체대입시 상담</div>
@@ -580,7 +603,7 @@ export default function App() {
         <div className="results-head">
           <b>{results.length}</b>건
           {(activeFilters || q) && (
-            <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]); setGender('전체') }}>필터 초기화</button>
+            <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]) }}>필터 초기화</button>
           )}
           {!profile.이름 && <span className="hint-profile">← ☰에서 학생 프로필 입력 시 종점 자동계산</span>}
         </div>

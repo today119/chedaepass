@@ -203,3 +203,21 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 .fchips .chip { padding: 5px 11px; font-size: 12.5px; }
 .drawer-body { gap: 0; }
 .drawer-body .pf-card { margin-top: 0; margin-bottom: 4px; }
+
+/* ===== 접이식 필터 박스 ===== */
+.fbox { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 8px; background: #fff; }
+.fbox-head { width: 100%; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: none; padding: 10px 12px; cursor: pointer; font-size: 12.5px; font-weight: 800; color: #334155; }
+.fbox-head:hover { background: #eef2f7; }
+.fbox--open .fbox-head { background: #eef4ff; color: #1d4ed8; }
+.fbox-t { display: inline-flex; align-items: center; }
+.fbox-cnt { margin-left: 6px; font-style: normal; background: var(--brand); color: #fff; border-radius: 999px; padding: 0 6px; font-size: 10.5px; line-height: 16px; }
+.fbox-arr { color: #94a3b8; font-size: 11px; }
+.fbox-body { padding: 10px 12px; border-top: 1px solid var(--line); }
+
+/* ===== push 드로어: 햄버거 열어도 카드 활성 ===== */
+@media (min-width: 1000px) {
+  .app { transition: padding-left .22s ease; }
+  .app--shift { padding-left: 372px; max-width: none; margin: 0; }
+  .app--shift .grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .app--shift .drawer-overlay { background: transparent; pointer-events: none; }
+}
