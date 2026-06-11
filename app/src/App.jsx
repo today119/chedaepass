@@ -230,7 +230,7 @@ function ProfileCard({ profile, setProfile }) {
       </div>
       <GradeRow label="내신" obj={p.내신} onChange={v => setProfile({ ...p, 내신: v })} />
       <GradeRow label="모의" obj={p.모의} onChange={v => setProfile({ ...p, 모의: v })} />
-      <div className="pf-hint">등급(1~9) 입력 → 카드에서 실기만 넣으면 종점 자동계산</div>
+      <div className="pf-hint">등급(1~9) 입력 → 카드에서 실기만 넣으면 총점 자동계산</div>
     </div>
   )
 }
@@ -348,21 +348,21 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
 
       {jongjeom != null ? (
         <div className="silgi-jong">
-          <div className="silgi-jong-head">종점(환산총점) <b>{jongjeom}</b><span className="muted"> / 100</span></div>
+          <div className="silgi-jong-head">총점(환산총점) <b>{jongjeom}</b><span className="muted"> / 100</span></div>
           <div className="silgi-jong-detail">
             {parts.map(([k, val, p]) => <span key={k}>{k} {val}×{p}%</span>)}
             {coveredPct < totalWeight && <span className="silgi-warn">· 미입력 {totalWeight - coveredPct}% 제외(참고치)</span>}
           </div>
         </div>
       ) : (
-        <div className="sc-need">종점 계산: 실기 입력 + 프로필 등급 필요</div>
+        <div className="sc-need">총점 계산: 실기 입력 + 프로필 등급 필요</div>
       )}
 
       {/* 작년 입결 비교 */}
       <div className="cmp-box">
         <div className="cmp-head">📊 작년 입결 비교</div>
         <div className="cmp-row">
-          <span className="cmp-l">내 종점</span>
+          <span className="cmp-l">내 총점</span>
           <b className="cmp-jj">{jongjeom != null ? jongjeom : '–'}</b>
           <span className="cmp-vs">vs 작년 합격선</span>
           <span className="cmp-soon">환산총점 입결 데이터 추가 예정</span>
@@ -384,7 +384,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
         <button className="sc-save-btn" onClick={save}>＋ 상담기록</button>
         {saved && <span className="sc-saved">저장됨 ✓</span>}
       </div>
-      <div className="silgi-foot">※ 종점은 단순 가중합 참고치. 정밀=모집요강 환산표 적용, 근사=표준 9등급 환산.</div>
+      <div className="silgi-foot">※ 총점은 단순 가중합 참고치. 정밀=모집요강 환산표 적용, 근사=표준 9등급 환산.</div>
     </div>
   )
 }
@@ -449,7 +449,7 @@ function Card({ rec, profile, onAddRecord, onOpenConsult }) {
         className={'consult-btn' + (showSilgi && !scorable ? (pending ? ' consult-btn--pending' : ' consult-btn--na') : '')}
         onClick={() => onOpenConsult(rec)}
       >
-        📝 {showSilgi ? '실기·종점 상담 화면' : '종점 상담 화면'} 열기
+        📝 {showSilgi ? '실기·총점 상담화면' : '총점 상담화면'} 열기
         {showSilgi && !scorable && (pending ? ' (보정 중)' : ' (채점표 미보유)')}
       </button>
     </div>
@@ -535,7 +535,7 @@ function ConsultModal({ rec, profile, onClose, onAddRecord }) {
           <button className="consult-x" onClick={onClose}>✕ 닫기</button>
         </div>
         <div className="consult-body">
-          {!hasProfileGrades && <div className="consult-hint">💡 ☰ 드로어의 학생 프로필에 내신·모의 등급을 입력하면 종점이 자동 계산됩니다.</div>}
+          {!hasProfileGrades && <div className="consult-hint">💡 ☰ 드로어의 학생 프로필에 내신·모의 등급을 입력하면 총점이 자동 계산됩니다.</div>}
           <ScoreCalc rec={rec} profile={profile} ipgy={ipgy} onAddRecord={onAddRecord} modal />
         </div>
       </div>
@@ -571,7 +571,7 @@ function ConsultLog({ records, setRecords, profile }) {
           </div>
           {records.length === 0 ? <div className="log-empty">카드의 "＋ 상담기록"으로 추가하세요.</div> : (
             <table className="log-table">
-              <thead><tr><th>대학</th><th>학과</th><th>전형</th><th>종점</th><th>메모</th><th></th></tr></thead>
+              <thead><tr><th>대학</th><th>학과</th><th>전형</th><th>총점</th><th>메모</th><th></th></tr></thead>
               <tbody>
                 {records.map(r => (
                   <tr key={r.id}>
@@ -663,7 +663,7 @@ export default function App() {
           {(activeFilters || q) && (
             <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]) }}>필터 초기화</button>
           )}
-          {!profile.이름 && <span className="hint-profile">← ☰에서 학생 프로필 입력 시 종점 자동계산</span>}
+          {!profile.이름 && <span className="hint-profile">← ☰에서 학생 프로필 입력 시 총점 자동계산</span>}
         </div>
 
         <div className="grid">
