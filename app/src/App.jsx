@@ -264,7 +264,8 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const [memo, setMemo] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const events = useMemo(() => (scorable ? silgiEventList(univ, rec.학과, gender) : []), [univ, rec.학과, gender, scorable])
+  const hasSilgiWeight = parsePct(rec.실기비율) > 0
+  const events = useMemo(() => (scorable && hasSilgiWeight ? silgiEventList(univ, rec.학과, gender) : []), [univ, rec.학과, gender, scorable, hasSilgiWeight])
   const weightedMode = events.some(e => (e.weight || 1) !== 1)
 
   const scored = events.map(ev => {
@@ -315,7 +316,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
 
   return (
     <div className={'silgi-box' + (modal ? ' silgi-box--modal' : '')}>
-      {scorable ? (
+      {(scorable && hasSilgiWeight) ? (
         <>
           <div className="silgi-gender">
             <span className="silgi-label">실기 성별</span>
