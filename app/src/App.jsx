@@ -354,8 +354,18 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
             {coveredPct < totalWeight && <span className="silgi-warn">· 미입력 {totalWeight - coveredPct}% 제외(참고치)</span>}
           </div>
         </div>
+      ) : (wSilgi === 0 && wNaesin === 0 && wSuneung === 0) ? (
+        <div className="sc-need sc-jeongseong">
+          📋 {admissionType(rec) === '학생부종합' ? '학생부종합(정성평가)' : '정량 반영비율 정보 없음'} — 정량 총점 환산이 없는 전형입니다. 아래 내신 등급 비교를 참고하세요.
+        </div>
       ) : (
-        <div className="sc-need">총점 계산: 실기 입력 + 프로필 등급 필요</div>
+        <div className="sc-need">
+          {[
+            wSilgi > 0 && silgiVal == null ? '실기 기록' : null,
+            wNaesin > 0 && !naesinR ? '내신 등급' : null,
+            wSuneung > 0 && !suneungR ? '모의 등급' : null,
+          ].filter(Boolean).join(' · ')} 입력 시 총점 계산
+        </div>
       )}
 
       {/* 작년 입결 비교 */}

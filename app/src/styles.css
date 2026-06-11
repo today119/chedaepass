@@ -297,3 +297,6 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
   .silgi-box--modal .silgi-row { grid-template-columns: 1fr 96px 64px; }
   .silgi-box--modal .silgi-input { font-size: 15px; }
 }
+
+/* 정성평가(정량 총점 없음) 안내 */
+.sc-jeongseong { background: #f5f3ff; border: 1px solid #ddd6fe; color: #6d28d9; text-align: left; line-height: 1.5; font-weight: 600; }
