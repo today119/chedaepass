@@ -212,7 +212,7 @@ function IpgyeolBlock({ rows }) {
           </div>
         )
       })}
-      <div className="ipg-foot">※ 어디가 전년도(2026) 입시결과 · 충원순위=마지막 추가합격 순위</div>
+      <div className="ipg-foot">※ 전년도(2026) 입시결과 · 충원순위=마지막 추가합격 순위</div>
     </div>
   )
 }
@@ -294,7 +294,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const coveredPct = parts.reduce((a, [, , p]) => a + p, 0)
   const jongjeom = parts.length ? Math.round(parts.reduce((a, [, val, p]) => a + (val * p) / 100, 0) * 10) / 10 : null
 
-  // 작년 입결 비교: 학생 내신 평균등급 vs 어디가 교과 컷
+  // 작년 입결 비교: 학생 내신 평균등급 vs 전년 교과 컷
   const myGrades = SUBJECTS.map(s => Number(profile?.내신?.[s])).filter(g => g >= 1 && g <= 9)
   const myNaesinAvg = myGrades.length ? Math.round((myGrades.reduce((a, b) => a + b, 0) / myGrades.length) * 100) / 100 : null
   const ipgRow = (ipgy || []).find(t => t.학생부환산등급컷 && (t.학생부환산등급컷[0] != null || t.학생부환산등급컷[1] != null))
@@ -405,7 +405,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
             )}
           </div>
         ) : (
-          <div className="cmp-naesin cmp-muted">작년 교과 합격선 비공개 — 어디가 입시결과 참고</div>
+          <div className="cmp-naesin cmp-muted">작년 교과 합격선 비공개</div>
         )}
       </div>
 
@@ -470,7 +470,7 @@ function Card({ rec, profile, onAddRecord, onOpenConsult }) {
 
       {ipgy && (
         <>
-          <button className="ipg-toggle" onClick={() => setOpenIpg(o => !o)}>📊 어디가 전년 입시결과 · 충원 {openIpg ? '▲' : '▼'}</button>
+          <button className="ipg-toggle" onClick={() => setOpenIpg(o => !o)}>📊 전년 입시결과 · 충원 {openIpg ? '▲' : '▼'}</button>
           {openIpg && <IpgyeolBlock rows={ipgy} />}
         </>
       )}
