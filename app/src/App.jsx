@@ -257,7 +257,7 @@ function ProfileCard({ profile, setProfile }) {
 // ---------- 종점 계산기 (실기 + 프로필 자동 내신/수능) ----------
 function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const univ = rec.대학
-  const scorable = isSilgiScorable(univ, rec.학과)
+  const scorable = isSilgiScorable(univ, rec.학과, rec.전형)
   const [gender, setGender] = useState(profile?.성별 || '남')
   const [records, setRecords] = useState({})
   const [silgiManual, setSilgiManual] = useState('')
@@ -265,7 +265,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const [saved, setSaved] = useState(false)
 
   const hasSilgiWeight = hasSilgi(rec)
-  const events = useMemo(() => (scorable && hasSilgiWeight ? silgiEventList(univ, rec.학과, gender) : []), [univ, rec.학과, gender, scorable, hasSilgiWeight])
+  const events = useMemo(() => (scorable && hasSilgiWeight ? silgiEventList(univ, rec.학과, gender, rec.전형) : []), [univ, rec.학과, rec.전형, gender, scorable, hasSilgiWeight])
   const weightedMode = events.some(e => (e.weight || 1) !== 1)
 
   const scored = events.map(ev => {
@@ -274,7 +274,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
     const sc = num == null || isNaN(num) ? null : scoreOfEntry(ev.entry, num)
     return { 종목: ev.종목, dir: ev.dir, weight: ev.weight, input: v, score: sc }
   })
-  const weighted = scorable ? silgiWeightedScore(univ, rec.학과, gender, records) : null
+  const weighted = scorable ? silgiWeightedScore(univ, rec.학과, gender, records, rec.전형) : null
   const silgiAuto = weighted ? weighted.score : null
   const usedCount = weighted ? weighted.used.length : 0
   const silgiVal = silgiAuto != null ? silgiAuto : (silgiManual !== '' && !isNaN(parseFloat(silgiManual)) ? parseFloat(silgiManual) : null)
@@ -433,7 +433,7 @@ function Card({ rec, profile, onAddRecord, onOpenConsult }) {
   const showSilgi = hasSilgi(rec)
   const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
   const sm = suneungMin(rec)
-  const scorable = isSilgiScorable(rec.대학, rec.학과)
+  const scorable = isSilgiScorable(rec.대학, rec.학과, rec.전형)
   const pending = PENDING_SILGI_UNIVS.has(rec.대학)
   const link = univLink(rec.대학)
   const ipgy = ipgyeolFor(rec.대학, rec.학과, rec.type)
