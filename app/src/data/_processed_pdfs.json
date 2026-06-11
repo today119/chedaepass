@@ -10,7 +10,8 @@
     "1MmlzMCiJKqsrYXTz6QIbn2l9YVjPvXG0": "삼육대 수시",
     "19JpznisAjbasycIDJyLhlRkqlukUUb6q": "상명대천안 수시",
     "1OIkp_jeCwY0bD6UV5JAfAiUj5iVK3O2T": "국민대 수시",
-    "1BPELKmzKXSjVpwknfBCIHBEp9H0XygnY": "서경대 수시"
+    "1BPELKmzKXSjVpwknfBCIHBEp9H0XygnY": "서경대 수시",
+    "1K3Hb-pbQBK9YPC4H51UXvqp48Gefk1aL": "경상국립대 수시(내신환산+스포츠헬스케어 일반전형 실기 적용)"
   },
   "수동확인필요": {
     "1vgcql_UNROKhrWs4GMw7CxjfS8K3hG9V": "인천대(1000점 스케일·표 추출 애매)",
@@ -21,5 +22,8 @@
   },
   "정시_다음단계": {
     "1fmHNaI1HEjcLKZaEBmzpOLoJ6ZZ-thka": "서울과기 정시(수능환산)"
+  },
+  "검토_부분반영": {
+    "1HvQ0mpdc7SqgMudSpkdP1JrK3ZeU5fS6": "케이원 책자26 — 실기 배점표가 상위5등급 슬라이스(편집본)라 정밀 미반영. 내신 9등급표는 완전(추후 일괄추가 검토). 사용자 결정 대기."
   }
 }
