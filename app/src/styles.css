@@ -403,3 +403,19 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 .cmp-src { font-size: 10px; font-weight: 700; color: #64748b; background: #eef2f7; border-radius: 5px; padding: 1px 5px; }
 .cmp-mid { background: #fef9c3; color: #a16207; }
 .cmp-foot { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* 페이지네이션 */
+.results-range { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding: 24px 0 8px; }
+.pager-btn { border: 1px solid var(--line); background: #fff; color: #374151; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pager-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); }
+.pager-btn:disabled { color: #cbd5e1; cursor: default; }
+.pager-num { min-width: 34px; border: 1px solid var(--line); background: #fff; color: #4b5566; border-radius: 8px; padding: 7px 0; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pager-num:hover { border-color: var(--brand); }
+.pager-num--on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.pager-dots { color: var(--muted); padding: 0 2px; }
+@media (max-width: 640px) {
+  .pager-btn, .pager-num { font-size: 14px; padding: 9px 12px; }
+  .pager-num { min-width: 38px; }
+  .results-range { font-size: 13px; }
+}

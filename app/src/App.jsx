@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import raw from './data/admissions.json'
 import { scoreOfEntry, silgiEventList, silgiWeightedScore, isSilgiScorable } from './data/silgiScore.js'
 import { univLink, ipgyeolFor, cutFor } from './data/ipgyeolLookup.js'
@@ -637,6 +637,28 @@ function ConsultLog({ records, setRecords, profile }) {
   )
 }
 
+// ---------- 페이지네이션 ----------
+const PAGE_SIZE = 54
+function Pagination({ page, pageCount, onChange }) {
+  if (pageCount <= 1) return null
+  const win = 2
+  let start = Math.max(0, page - win)
+  let end = Math.min(pageCount - 1, page + win)
+  if (page <= win) end = Math.min(pageCount - 1, 2 * win)
+  if (page >= pageCount - 1 - win) start = Math.max(0, pageCount - 1 - 2 * win)
+  const nums = []
+  for (let i = start; i <= end; i++) nums.push(i)
+  return (
+    <div className="pager">
+      <button className="pager-btn" disabled={page === 0} onClick={() => onChange(page - 1)}>‹ 이전</button>
+      {start > 0 && <><button className="pager-num" onClick={() => onChange(0)}>1</button>{start > 1 && <span className="pager-dots">…</span>}</>}
+      {nums.map(i => <button key={i} className={'pager-num' + (i === page ? ' pager-num--on' : '')} onClick={() => onChange(i)}>{i + 1}</button>)}
+      {end < pageCount - 1 && <>{end < pageCount - 2 && <span className="pager-dots">…</span>}<button className="pager-num" onClick={() => onChange(pageCount - 1)}>{pageCount}</button></>}
+      <button className="pager-btn" disabled={page === pageCount - 1} onClick={() => onChange(page + 1)}>다음 ›</button>
+    </div>
+  )
+}
+
 export default function App() {
   const [q, setQ] = useState('')
   const [type, setType] = useState('전체')
@@ -650,6 +672,8 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1000)
   const [consultRec, setConsultRec] = useState(null)
   const [sortBy, setSortBy] = useState('가나다')
+  const [page, setPage] = useState(0)
+  const listTopRef = useRef(null)
 
   const [profile, setProfile] = useLocalStorage('chedae_profile', EMPTY_PROFILE)
   const [records, setRecords] = useLocalStorage('chedae_records', [])
@@ -709,6 +733,17 @@ export default function App() {
     return arr
   }, [results, sortBy])
 
+  // 필터·정렬·검색 변경 시 첫 페이지로
+  useEffect(() => { setPage(0) }, [q, type, regions, jongmok, estab, types, series, silgi, sortBy, profile.성별])
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const curPage = Math.min(page, pageCount - 1)
+  const pageItems = sorted.slice(curPage * PAGE_SIZE, (curPage + 1) * PAGE_SIZE)
+  function goPage(p) {
+    setPage(p)
+    if (listTopRef.current) listTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    else window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const activeFilters = (regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length)
 
   const filters = { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, toggle }
@@ -729,8 +764,9 @@ export default function App() {
           <button className="filter-btn" onClick={() => setDrawerOpen(true)}>☰ 필터{activeFilters ? ' •' : ''}</button>
         </div>
 
-        <div className="results-head">
-          <b>{sorted.length}</b>건
+        <div className="results-head" ref={listTopRef}>
+          총 <b>{sorted.length}</b>건
+          {sorted.length > PAGE_SIZE && <span className="results-range">{curPage * PAGE_SIZE + 1}–{Math.min((curPage + 1) * PAGE_SIZE, sorted.length)} · {curPage + 1}/{pageCount}쪽</span>}
           {(activeFilters || q) && (
             <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]) }}>필터 초기화</button>
           )}
@@ -743,9 +779,10 @@ export default function App() {
         </div>
 
         <div className="grid">
-          {sorted.slice(0, 120).map((r, i) => <Card key={(r.대학 || '') + (r.학과 || '') + (r.전형 || r.군 || '') + i} rec={r} profile={profile} onAddRecord={addRecord} onOpenConsult={setConsultRec} />)}
+          {pageItems.map((r, i) => <Card key={(r.대학 || '') + (r.학과 || '') + (r.전형 || r.군 || '') + (curPage * PAGE_SIZE + i)} rec={r} profile={profile} onAddRecord={addRecord} onOpenConsult={setConsultRec} />)}
         </div>
-        {sorted.length > 120 && <div className="more">상위 120건 표시 중 · 검색을 좁혀주세요</div>}
+        {sorted.length === 0 && <div className="more">검색 결과가 없습니다.</div>}
+        <Pagination page={curPage} pageCount={pageCount} onChange={goPage} />
       </div>
 
       <ConsultLog records={records} setRecords={setRecords} profile={profile} />
