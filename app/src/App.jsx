@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import raw from './data/admissions.json'
 import { scoreOfEntry, silgiEventList, silgiWeightedScore, isSilgiScorable } from './data/silgiScore.js'
-import { univLink, ipgyeolFor } from './data/ipgyeolLookup.js'
-import { naesinScore, suneungScore, hasPreciseNaesin, SUBJECTS } from './data/scoreEngine.js'
+import { univLink, ipgyeolFor, cutFor } from './data/ipgyeolLookup.js'
+import { naesinScore, suneungScore, hasPreciseNaesin, naesinAvgGrade, moeuiAvgGrade, SUBJECTS } from './data/scoreEngine.js'
 
 // 채점표 보유했으나 라벨 보정 중인 대학
 const PENDING_SILGI_UNIVS = new Set([
@@ -294,20 +294,28 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const coveredPct = parts.reduce((a, [, , p]) => a + p, 0)
   const jongjeom = parts.length ? Math.round(parts.reduce((a, [, val, p]) => a + (val * p) / 100, 0) * 10) / 10 : null
 
-  // 작년 입결 비교: 학생 내신 평균등급 vs 전년 교과 컷
-  const myGrades = SUBJECTS.map(s => Number(profile?.내신?.[s])).filter(g => g >= 1 && g <= 9)
-  const myNaesinAvg = myGrades.length ? Math.round((myGrades.reduce((a, b) => a + b, 0) / myGrades.length) * 100) / 100 : null
-  const ipgRow = (ipgy || []).find(t => t.학생부환산등급컷 && (t.학생부환산등급컷[0] != null || t.학생부환산등급컷[1] != null))
-  const cut50 = ipgRow?.학생부환산등급컷?.[0]
-  const cut70 = ipgRow?.학생부환산등급컷?.[1]
+  // 작년 입결 비교: 학교 기준 반영 평균등급(수시) / 모의 평균등급(정시) vs 작년 컷
+  const isJeongsi = rec.type === '정시'
+  const naesinAvg = naesinAvgGrade(rec.대학, profile?.내신)
+  const moeuiAvg = moeuiAvgGrade(profile?.모의)
+  const myAvg = isJeongsi ? moeuiAvg : (naesinAvg ? naesinAvg.avg : null)
+  const cut = cutFor(rec.대학, rec.학과, rec.type, rec.전형 || rec.군)
+  const c50 = isJeongsi ? cut?.백분위50 : cut?.교과50
+  const c70 = isJeongsi ? cut?.백분위70 : cut?.교과70
+  let verdict = null
+  if (!isJeongsi && myAvg != null && (c50 != null || c70 != null)) {
+    if (c50 != null && myAvg <= c50) verdict = { t: '우위(안정권)', cls: 'cmp-ok' }
+    else if (c70 != null && myAvg <= c70) verdict = { t: '적정', cls: 'cmp-mid' }
+    else verdict = { t: '소신(도전)', cls: 'cmp-no' }
+  }
 
   function save() {
-    const naesinCmp = (myNaesinAvg != null && cut70 != null)
-      ? `내신 ${myNaesinAvg} vs 70%컷 ${cut70} (${myNaesinAvg <= cut70 ? '우위' : '열위'})`
-      : (myNaesinAvg != null ? `내신 평균 ${myNaesinAvg}등급` : '')
+    const cmpText = myAvg == null ? ''
+      : (isJeongsi ? `모의 평균 ${myAvg}등급` + (c70 != null ? ` vs 작년 백분위70%컷 ${c70}` : '')
+        : `반영 평균 ${myAvg}등급` + (c70 != null ? ` vs 작년 교과70%컷 ${c70}` : '') + (verdict ? ` [${verdict.t}]` : ''))
     onAddRecord({
       대학: rec.대학, 학과: rec.학과, 전형: rec.전형 || rec.군 || '', 전형유형: admissionType(rec), type: rec.type,
-      종점: jongjeom, 내신비교: naesinCmp, 메모: memo.trim(),
+      종점: jongjeom, 내신비교: cmpText, 메모: memo.trim(),
       _profile: profile,
     })
     setSaved(true); setMemo('')
@@ -368,7 +376,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
 
       {jongjeom != null ? (
         <div className="silgi-jong">
-          <div className="silgi-jong-head">총점(환산총점) <b>{jongjeom}</b><span className="muted"> / 100</span></div>
+          <div className="silgi-jong-head">참고 총점 <b>{jongjeom}</b><span className="muted"> / 100</span></div>
           <div className="silgi-jong-detail">
             {parts.map(([k, val, p]) => <span key={k}>{k} {val}×{p}%</span>)}
             {coveredPct < totalWeight && <span className="silgi-warn">· 미입력 {totalWeight - coveredPct}% 제외(참고치)</span>}
@@ -388,25 +396,25 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
         </div>
       )}
 
-      {/* 작년 입결 비교 */}
+      {/* 작년 입결 비교 (등급/백분위 컷 중심) */}
       <div className="cmp-box">
-        <div className="cmp-head">📊 작년 입결 비교</div>
+        <div className="cmp-head">📊 작년 입결 비교 {isJeongsi ? '(수능 백분위 컷)' : '(교과 등급 컷)'}</div>
         <div className="cmp-row">
-          <span className="cmp-l">내 총점</span>
-          <b className="cmp-jj">{jongjeom != null ? jongjeom : '–'}</b>
-          <span className="cmp-vs">vs 작년 합격선</span>
-          <span className="cmp-soon">환산총점 입결 데이터 추가 예정</span>
+          <span className="cmp-l">{isJeongsi ? '내 모의 평균' : '내 반영 평균'}</span>
+          <b className="cmp-jj">{myAvg != null ? myAvg : '–'}</b><span className="cmp-unit">등급</span>
+          {!isJeongsi && naesinAvg && <span className="cmp-sub">{naesinAvg.precise ? '정밀 반영교과' : '표준 국·영·수·사·과'}</span>}
         </div>
-        {(cut50 != null || cut70 != null) ? (
-          <div className="cmp-naesin">
-            내신 평균 <b>{myNaesinAvg ?? '–'}</b>등급 vs 작년 교과 {cut50 != null && <>50%컷 {cut50}</>}{cut70 != null && <> · 70%컷 {cut70}</>}
-            {myNaesinAvg != null && cut70 != null && (
-              <span className={'cmp-tag ' + (myNaesinAvg <= cut70 ? 'cmp-ok' : 'cmp-no')}>{myNaesinAvg <= cut70 ? '내신 우위' : '내신 열위'}</span>
-            )}
+        {(c50 != null || c70 != null) ? (
+          <div className="cmp-cut">
+            작년 {isJeongsi ? '수능 백분위' : '교과'} {c50 != null && <>50%컷 <b>{c50}</b></>}{c50 != null && c70 != null && ' · '}{c70 != null && <>70%컷 <b>{c70}</b></>}
+            <span className="cmp-src">{cut.source === '수동' ? '수동' : '자동'}</span>
+            {verdict && <span className={'cmp-tag ' + verdict.cls}>{verdict.t}</span>}
+            {isJeongsi && <span className="cmp-soon">등급↔백분위 직접비교 제한(참고)</span>}
           </div>
         ) : (
-          <div className="cmp-naesin cmp-muted">작년 교과 합격선 비공개</div>
+          <div className="cmp-cut cmp-muted">작년 컷 자료 없음 — 추가 예정</div>
         )}
+        <div className="cmp-foot">※ 비교 주지표는 등급/백분위 컷. 환산총점은 위 "참고 총점".</div>
       </div>
 
       <div className="sc-save">
