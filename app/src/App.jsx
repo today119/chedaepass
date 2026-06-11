@@ -39,7 +39,7 @@ function admissionType(rec) {
   const e = rec.전형 || ''
   if (/특기/.test(e)) return '특기자'
   if (rec.type === '정시') return '정시'
-  if (/종합/.test(e)) return '학생부종합'
+  if (/종합|학종/.test(e)) return '학생부종합'
   if (/교과/.test(e)) return '학생부교과'
   if (/논술/.test(e)) return '논술'
   if (/실기|실적/.test(e)) return '실기위주'
