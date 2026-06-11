@@ -1,0 +1,25 @@
+{
+  "_설명": "정밀 내신환산 처리 완료한 드라이브 PDF fileId (중복 처리 방지용)",
+  "처리완료": {
+    "1eETXCrg2e3lDCGMEBbdHr_fYjJOVJxnk": "단국대 수시",
+    "1zsK5uvTawmpke8ebAQp9-BkCL3CEV5Qf": "중앙대 수시",
+    "1M7FK0jxLRYvMQKRk-8DQ2ZxHTVWWXUHq": "한양대 수시",
+    "1iJiqtVKJob6Yn8OEAExnm6UGFwtocZT-": "동국대 수시",
+    "1wj5LF-RsiepcIb6o53DJ-AaXG_OcG_aO": "한체대 수시",
+    "17BzHadcHIoPl5fhVTKjSnkNQ3Rd-ggOy": "광운대 수시",
+    "1MmlzMCiJKqsrYXTz6QIbn2l9YVjPvXG0": "삼육대 수시",
+    "19JpznisAjbasycIDJyLhlRkqlukUUb6q": "상명대천안 수시",
+    "1OIkp_jeCwY0bD6UV5JAfAiUj5iVK3O2T": "국민대 수시",
+    "1BPELKmzKXSjVpwknfBCIHBEp9H0XygnY": "서경대 수시"
+  },
+  "수동확인필요": {
+    "1vgcql_UNROKhrWs4GMw7CxjfS8K3hG9V": "인천대(1000점 스케일·표 추출 애매)",
+    "1qub3wvjXeP--ueSog7hVXqUZTqHRTjG3": "서울과기 수시(시행계획-등급표 미수록)"
+  },
+  "스킵": {
+    "1J3nG51VfG7QBZoLocL2UnVsXwXgmqAV2": "한양ERICA(admissions에 캠퍼스 구분 없음)"
+  },
+  "정시_다음단계": {
+    "1fmHNaI1HEjcLKZaEBmzpOLoJ6ZZ-thka": "서울과기 정시(수능환산)"
+  }
+}
