@@ -236,7 +236,7 @@ function ProfileCard({ profile, setProfile }) {
 }
 
 // ---------- 종점 계산기 (실기 + 프로필 자동 내신/수능) ----------
-function ScoreCalc({ rec, profile, ipgy, onAddRecord }) {
+function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const univ = rec.대학
   const scorable = SCORABLE_SET.has(univ)
   const [gender, setGender] = useState(profile?.성별 || '남')
@@ -295,7 +295,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord }) {
   }
 
   return (
-    <div className="silgi-box">
+    <div className={'silgi-box' + (modal ? ' silgi-box--modal' : '')}>
       {scorable ? (
         <>
           <div className="silgi-gender">
@@ -389,9 +389,8 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord }) {
   )
 }
 
-function Card({ rec, profile, onAddRecord }) {
+function Card({ rec, profile, onAddRecord, onOpenConsult }) {
   const tags = jongmokTags(rec)
-  const [openCalc, setOpenCalc] = useState(false)
   const [openIpg, setOpenIpg] = useState(false)
   const showSilgi = hasSilgi(rec)
   const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
@@ -447,13 +446,12 @@ function Card({ rec, profile, onAddRecord }) {
       )}
 
       <button
-        className={'silgi-toggle' + (scorable ? '' : pending ? ' silgi-toggle--pending' : showSilgi ? ' silgi-toggle--na' : '')}
-        onClick={() => setOpenCalc(o => !o)}
+        className={'consult-btn' + (showSilgi && !scorable ? (pending ? ' consult-btn--pending' : ' consult-btn--na') : '')}
+        onClick={() => onOpenConsult(rec)}
       >
-        🎯 {showSilgi ? '실기 기록 입력 · 종점' : '종점 계산'}
-        {showSilgi && !scorable && (pending ? ' (보정 중)' : ' (채점표 미보유)')} {openCalc ? '▲' : '▼'}
+        📝 {showSilgi ? '실기·종점 상담 화면' : '종점 상담 화면'} 열기
+        {showSilgi && !scorable && (pending ? ' (보정 중)' : ' (채점표 미보유)')}
       </button>
-      {openCalc && <ScoreCalc rec={rec} profile={profile} ipgy={ipgy} onAddRecord={onAddRecord} />}
     </div>
   )
 }
@@ -514,6 +512,37 @@ function Drawer({ open, onClose, filters, profile, setProfile }) {
   )
 }
 
+// ---------- 풀스크린 상담 모달 ----------
+function ConsultModal({ rec, profile, onClose, onAddRecord }) {
+  const ipgy = ipgyeolFor(rec.대학, rec.학과, rec.type)
+  const precise = hasPreciseNaesin(rec.대학)
+  const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [onClose])
+  const hasProfileGrades = profile && ((profile.내신 && Object.values(profile.내신).some(v => v !== '' && v != null)) || (profile.모의 && Object.values(profile.모의).some(v => v !== '' && v != null)))
+  return (
+    <div className="consult-overlay" onClick={onClose}>
+      <div className="consult-modal" onClick={e => e.stopPropagation()}>
+        <div className="consult-head">
+          <div>
+            <div className="consult-uni">{rec.대학} {precise && <span className="badge-precise">정밀</span>}</div>
+            <div className="consult-dept">{rec.학과} <span className="muted">· {rec.전형 || rec.군}</span> · <span className={'pill ' + (rec.type === '수시' ? 'pill-susi' : 'pill-jeongsi')}>{rec.type}</span> · {region}</div>
+          </div>
+          <button className="consult-x" onClick={onClose}>✕ 닫기</button>
+        </div>
+        <div className="consult-body">
+          {!hasProfileGrades && <div className="consult-hint">💡 ☰ 드로어의 학생 프로필에 내신·모의 등급을 입력하면 종점이 자동 계산됩니다.</div>}
+          <ScoreCalc rec={rec} profile={profile} ipgy={ipgy} onAddRecord={onAddRecord} modal />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---------- 상담일지 ----------
 function ConsultLog({ records, setRecords, profile }) {
   const [open, setOpen] = useState(false)
@@ -571,6 +600,7 @@ export default function App() {
   const [silgi, setSilgi] = useState([])
   const [gender, setGender] = useState('전체')
   const [drawerOpen, setDrawerOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1000)
+  const [consultRec, setConsultRec] = useState(null)
 
   const [profile, setProfile] = useLocalStorage('chedae_profile', EMPTY_PROFILE)
   const [records, setRecords] = useLocalStorage('chedae_records', [])
@@ -637,12 +667,14 @@ export default function App() {
         </div>
 
         <div className="grid">
-          {results.slice(0, 120).map((r, i) => <Card key={i} rec={r} profile={profile} onAddRecord={addRecord} />)}
+          {results.slice(0, 120).map((r, i) => <Card key={i} rec={r} profile={profile} onAddRecord={addRecord} onOpenConsult={setConsultRec} />)}
         </div>
         {results.length > 120 && <div className="more">상위 120건 표시 중 · 검색을 좁혀주세요</div>}
       </div>
 
       <ConsultLog records={records} setRecords={setRecords} profile={profile} />
+
+      {consultRec && <ConsultModal rec={consultRec} profile={profile} onClose={() => setConsultRec(null)} onAddRecord={addRecord} />}
     </div>
   )
 }
