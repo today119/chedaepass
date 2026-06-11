@@ -310,3 +310,12 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 
 /* 실기 종목 가중치 배지 */
 .silgi-w { color: #b45309; font-weight: 800; font-size: 11px; }
+
+/* 카드 정렬 토글 */
+.results-head .reset { margin-left: 0; }
+.sort-wrap { margin-left: auto; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.sort-label { font-size: 11px; font-weight: 700; color: var(--muted); }
+.sort-chip { border: 1px solid var(--line); background: #fff; color: #4b5566; padding: 4px 11px; border-radius: 999px; font-size: 12px; cursor: pointer; }
+.sort-chip:hover { border-color: var(--brand); }
+.sort-chip--on { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+@media (max-width: 640px) { .sort-wrap { margin-left: 0; width: 100%; margin-top: 6px; } }

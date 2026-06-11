@@ -640,6 +640,7 @@ export default function App() {
   const [gender, setGender] = useState('전체')
   const [drawerOpen, setDrawerOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1000)
   const [consultRec, setConsultRec] = useState(null)
+  const [sortBy, setSortBy] = useState('가나다')
 
   const [profile, setProfile] = useLocalStorage('chedae_profile', EMPTY_PROFILE)
   const [records, setRecords] = useLocalStorage('chedae_records', [])
@@ -681,6 +682,24 @@ export default function App() {
     })
   }, [q, type, regions, jongmok, estab, types, series, silgi, profile.성별])
 
+  const sorted = useMemo(() => {
+    const arr = [...results]
+    const byName = (a, b) => (a.대학 || '').localeCompare(b.대학 || '', 'ko') || (a.학과 || '').localeCompare(b.학과 || '', 'ko')
+    if (sortBy === '지역') {
+      arr.sort((a, b) => {
+        const ia = REGION_ORDER.indexOf(regionKey(a)), ib = REGION_ORDER.indexOf(regionKey(b))
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || byName(a, b)
+      })
+    } else if (sortBy === '실기비중') {
+      arr.sort((a, b) => parsePct(b.실기비율) - parsePct(a.실기비율) || byName(a, b))
+    } else if (sortBy === '모집시기') {
+      arr.sort((a, b) => (a.type === '수시' ? 0 : 1) - (b.type === '수시' ? 0 : 1) || byName(a, b))
+    } else {
+      arr.sort(byName)
+    }
+    return arr
+  }, [results, sortBy])
+
   const activeFilters = (regions.length || jongmok.length || type !== '전체' || estab !== '전체' || types.length || series.length || silgi.length)
 
   const filters = { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, toggle }
@@ -702,17 +721,22 @@ export default function App() {
         </div>
 
         <div className="results-head">
-          <b>{results.length}</b>건
+          <b>{sorted.length}</b>건
           {(activeFilters || q) && (
             <button className="reset" onClick={() => { setQ(''); setType('전체'); setRegions([]); setJongmok([]); setEstab('전체'); setTypes([]); setSeries([]); setSilgi([]) }}>필터 초기화</button>
           )}
-          {!profile.이름 && <span className="hint-profile">← ☰에서 학생 프로필 입력 시 총점 자동계산</span>}
+          <div className="sort-wrap">
+            <span className="sort-label">정렬</span>
+            {['가나다', '지역', '실기비중', '모집시기'].map(s => (
+              <button key={s} className={'sort-chip' + (sortBy === s ? ' sort-chip--on' : '')} onClick={() => setSortBy(s)}>{s === '실기비중' ? '실기↑' : s}</button>
+            ))}
+          </div>
         </div>
 
         <div className="grid">
-          {results.slice(0, 120).map((r, i) => <Card key={i} rec={r} profile={profile} onAddRecord={addRecord} onOpenConsult={setConsultRec} />)}
+          {sorted.slice(0, 120).map((r, i) => <Card key={(r.대학 || '') + (r.학과 || '') + (r.전형 || r.군 || '') + i} rec={r} profile={profile} onAddRecord={addRecord} onOpenConsult={setConsultRec} />)}
         </div>
-        {results.length > 120 && <div className="more">상위 120건 표시 중 · 검색을 좁혀주세요</div>}
+        {sorted.length > 120 && <div className="more">상위 120건 표시 중 · 검색을 좁혀주세요</div>}
       </div>
 
       <ConsultLog records={records} setRecords={setRecords} profile={profile} />
