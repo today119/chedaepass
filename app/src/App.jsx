@@ -542,7 +542,7 @@ export default function App() {
   const [series, setSeries] = useState([])
   const [silgi, setSilgi] = useState([])
   const [gender, setGender] = useState('전체')
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1000)
 
   const [profile, setProfile] = useLocalStorage('chedae_profile', EMPTY_PROFILE)
   const [records, setRecords] = useLocalStorage('chedae_records', [])
