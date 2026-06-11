@@ -8,6 +8,10 @@
 // thr === null : 해당 점수 구간의 극단(이하/이상) — 항상 충족.
 
 import scoringData from './silgi_scoring_clean.json'
+import preciseData from './silgi_precise.json'
+
+// 정밀 데이터: { 대학: { 표: [{ 출처, 학과매칭:[부분문자열], 종목:[{성별,종목,dir,thr,weight}] }] } }
+// 모집단위(대학+학과)로 매칭. 학과매칭이 비면 그 대학 전체 적용. 없으면 기존 silgi_scoring_clean(대학 단위, 균등) 폴백.
 
 /**
  * 한 종목의 채점 엔트리에서 측정 기록(record)에 해당하는 점수를 반환.
@@ -54,5 +58,66 @@ export function silgiEventsOf(university) {
 
 /** 채점 가능한(데이터가 정상인) 대학 목록. */
 export const scorableUniversities = Object.keys(scoringData)
+
+// ---------- 정밀(모집단위 단위 + 종목 가중치) ----------
+
+/**
+ * 대학+학과로 실기 채점표 조회.
+ * @returns {{source:'정밀'|'기본', 출처?:string, entries:[{성별,종목,dir,thr,weight}]}|null}
+ */
+export function silgiTable(university, dept) {
+  const p = preciseData[university]
+  if (p && Array.isArray(p.표)) {
+    const matched = p.표.find(
+      t => !t.학과매칭 || t.학과매칭.length === 0 || t.학과매칭.some(k => (dept || '').includes(k)),
+    )
+    if (matched) return { source: '정밀', 출처: matched.출처, entries: matched.종목 }
+  }
+  const list = scoringData[university]
+  if (list) return { source: '기본', entries: list.map(e => ({ ...e, weight: 1 })) }
+  return null
+}
+
+/** 정밀/기본 채점표가 있는 모집단위인지 */
+export function isSilgiScorable(university, dept) {
+  return !!silgiTable(university, dept)
+}
+
+/** 입력 폼용 종목 목록(성별 매칭, 종목명 중복제거). dir·weight 포함 */
+export function silgiEventList(university, dept, gender) {
+  const tbl = silgiTable(university, dept)
+  if (!tbl) return []
+  const seen = new Set()
+  const out = []
+  for (const e of tbl.entries) {
+    if (e.성별 !== gender && e.성별 != null) continue
+    if (seen.has(e.종목)) continue
+    seen.add(e.종목)
+    out.push({ 종목: e.종목, dir: e.dir, weight: e.weight || 1, entry: e })
+  }
+  return out
+}
+
+/**
+ * 종목별 기록(records: {종목: 값})으로 가중 실기 환산점(0~100) 계산.
+ * @returns {{score:number, used:[{종목,score,weight}], source:string}|null}
+ */
+export function silgiWeightedScore(university, dept, gender, records) {
+  const events = silgiEventList(university, dept, gender)
+  if (!events.length) return null
+  let wsum = 0, ssum = 0
+  const used = []
+  for (const ev of events) {
+    const raw = records[ev.종목]
+    if (raw == null || raw === '' || isNaN(parseFloat(raw))) continue
+    const sc = scoreOfEntry(ev.entry, parseFloat(raw))
+    if (sc == null) continue
+    const w = ev.weight || 1
+    wsum += w; ssum += sc * w
+    used.push({ 종목: ev.종목, score: sc, weight: w })
+  }
+  if (!wsum) return null
+  return { score: Math.round((ssum / wsum) * 10) / 10, used, source: silgiTable(university, dept).source }
+}
 
 export default silgiScore
