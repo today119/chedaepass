@@ -319,3 +319,78 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 .sort-chip:hover { border-color: var(--brand); }
 .sort-chip--on { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
 @media (max-width: 640px) { .sort-wrap { margin-left: 0; width: 100%; margin-top: 6px; } }
+
+/* ===== 모바일(≤640px) 폰트 한 단계 확대 (데스크톱 보존) ===== */
+@media (max-width: 640px) {
+  .brand { font-size: 21px; }
+  .topstat { font-size: 14px; }
+  .search { font-size: 17px; padding: 15px 18px; }
+  .filter-btn { font-size: 15px; height: 50px; }
+  /* 결과 헤더·정렬 */
+  .results-head { font-size: 15px; }
+  .results-head b { font-size: 20px; }
+  .reset { font-size: 13px; }
+  .sort-label { font-size: 12.5px; }
+  .sort-chip { font-size: 13.5px; padding: 6px 13px; }
+  /* 카드 */
+  .card-uni { font-size: 18px; }
+  .card-dept { font-size: 14px; }
+  .meta-series, .meta-type { font-size: 12.5px; padding: 3px 9px; }
+  .card-badges .pill { font-size: 12px; }
+  .card-stats b { font-size: 18px; }
+  .card-stats span { font-size: 11.5px; }
+  .card-tags .tag { font-size: 12.5px; padding: 4px 9px; }
+  .card-note { font-size: 13px; }
+  .card-links .ext-link { font-size: 13px; padding: 7px 11px; }
+  /* 액션 버튼 */
+  .ipg-toggle, .consult-btn, .silgi-toggle { font-size: 15px; padding: 12px; }
+  /* 전년 입시결과 블록 */
+  .ipg-when { font-size: 12px; }
+  .ipg-name { font-size: 13.5px; }
+  .ipg-nums { font-size: 13px; }
+  .ipg-cut { font-size: 13px; }
+  .ipg-foot { font-size: 12px; }
+  /* 실기/총점 */
+  .silgi-label { font-size: 12.5px; }
+  .silgi-ev { font-size: 14px; }
+  .silgi-dir { font-size: 11.5px; }
+  .silgi-input { font-size: 15px; padding: 9px 10px; }
+  .silgi-score { font-size: 14px; }
+  .silgi-avg { font-size: 14.5px; }
+  .silgi-jong-head { font-size: 15px; }
+  .silgi-jong-head b { font-size: 22px; }
+  .sc-pill { font-size: 13px; }
+  .sc-need, .sc-jeongseong { font-size: 13.5px; }
+  .silgi-foot { font-size: 12px; }
+  .silgi-w { font-size: 12.5px; }
+  /* 작년 입결 비교 */
+  .cmp-head { font-size: 13.5px; }
+  .cmp-row { font-size: 13.5px; }
+  .cmp-jj { font-size: 19px; }
+  .cmp-naesin { font-size: 13px; }
+  .cmp-tag { font-size: 12px; }
+  /* 상담 메모/저장 */
+  .sc-memo { font-size: 14px; padding: 10px 12px; }
+  .sc-save-btn { font-size: 14px; padding: 10px 15px; }
+  /* 드로어: 필터·프로필 */
+  .drawer-head { font-size: 16px; }
+  .drawer-sec { font-size: 13.5px; }
+  .fbox-head { font-size: 14px; }
+  .fbox-cnt { font-size: 11.5px; line-height: 18px; }
+  .fchips .chip { font-size: 14px; padding: 7px 13px; }
+  .pf-title { font-size: 15px; }
+  .pf-name, .pf-row select { font-size: 14.5px; padding: 9px 10px; }
+  .pf-gl { font-size: 13px; }
+  .pf-gi label { font-size: 11.5px; }
+  .pf-gi input { font-size: 15px; width: 42px; padding: 7px 2px; }
+  .pf-hint { font-size: 12.5px; }
+  .gas-input { font-size: 13.5px; }
+  .gas-hint { font-size: 12.5px; }
+  /* 상담일지 */
+  .log-tab { font-size: 14px; padding: 10px 17px; }
+  .log-table { font-size: 13.5px; }
+  /* 상담 모달 헤더 */
+  .consult-dept { font-size: 14px; }
+  .consult-x { font-size: 14px; }
+  .consult-hint { font-size: 14px; }
+}
