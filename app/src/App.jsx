@@ -264,7 +264,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const [memo, setMemo] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const hasSilgiWeight = parsePct(rec.실기비율) > 0
+  const hasSilgiWeight = hasSilgi(rec)
   const events = useMemo(() => (scorable && hasSilgiWeight ? silgiEventList(univ, rec.학과, gender) : []), [univ, rec.학과, gender, scorable, hasSilgiWeight])
   const weightedMode = events.some(e => (e.weight || 1) !== 1)
 
