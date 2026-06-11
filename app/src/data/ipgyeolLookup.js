@@ -1,6 +1,36 @@
-// 어디가 입시결과(전년도) 조회 헬퍼.
+// 전년도 입시결과 조회 헬퍼.
 // ipgyeol.json(대학별 모집단위·전형·충원·컷·입시홈페이지)을 admissions.json 카드와 매칭.
 import ip from './ipgyeol.json'
+import manualCuts from './ipgyeol_cuts.json'
+
+// 수동 작년 컷(ipgyeol_cuts.json) 우선 조회. 없으면 자동수집(ipgyeolFor)으로 폴백.
+// 반환: { 교과50, 교과70, 백분위50, 백분위70, source:'수동'|'자동' } | null
+export function cutFor(대학, 학과, type, 전형) {
+  const list = manualCuts[대학]
+  if (Array.isArray(list)) {
+    const m = list.find((e) => {
+      if (e.시기 && type && e.시기 !== type) return false
+      const dOk = !e.학과매칭 || e.학과매칭.length === 0 || e.학과매칭.some((k) => (학과 || '').includes(k))
+      const jOk = !e.전형매칭 || e.전형매칭.length === 0 || e.전형매칭.some((k) => (전형 || '').includes(k))
+      return dOk && jOk
+    })
+    if (m) return { 교과50: m.교과50 ?? null, 교과70: m.교과70 ?? null, 백분위50: m.백분위50 ?? null, 백분위70: m.백분위70 ?? null, source: '수동' }
+  }
+  // 폴백: 자동수집 어디가 컷
+  const rows = ipgyeolFor(대학, 학과, type)
+  if (rows) {
+    const r = rows.find((t) => t.학생부환산등급컷 || t.수능평균백분위컷)
+    if (r) {
+      const sb = r.학생부환산등급컷, su = r.수능평균백분위컷
+      return {
+        교과50: sb?.[0] ?? null, 교과70: sb?.[1] ?? null,
+        백분위50: su?.[0] ?? null, 백분위70: su?.[1] ?? null,
+        source: '자동',
+      }
+    }
+  }
+  return null
+}
 
 // 대학명 정규화: '국립' 접두, 캠퍼스(괄호), 공백, 말미 '대학교/대학' 제거 → 개명/표기차 흡수
 const normU = (n) =>
@@ -35,7 +65,7 @@ export function univLink(대학) {
   return { 홈페이지: u.홈페이지, 입시홈페이지: u.입시홈페이지 }
 }
 
-// 카드(rec)에 해당하는 어디가 전년 입시결과 전형 목록
+// 카드(rec)에 해당하는 전년 입시결과 전형 목록
 // type: '수시' | '정시' (rec.type)
 export function ipgyeolFor(대학, 학과, type) {
   const u = byU.get(normU(대학))

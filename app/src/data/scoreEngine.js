@@ -46,3 +46,25 @@ export function suneungScore(대학, moeuiByGrade) {
 export function hasPreciseNaesin(대학) {
   return !!naesin[대학]
 }
+
+// 학교 기준 내신 반영 평균등급 (정밀 있으면 그 학교 반영교과, 없으면 표준 국영수사과)
+// 낮을수록 우수. { avg, subjects, precise }
+export function naesinAvgGrade(대학, naesinByGrade) {
+  if (!naesinByGrade) return null
+  const rec = naesin[대학]
+  const subjects = rec ? (rec.반영교과.기본 || SUBJECTS) : SUBJECTS
+  const grades = subjects.map((s) => Number(naesinByGrade[s])).filter((g) => g >= 1 && g <= 9)
+  if (!grades.length) return null
+  return {
+    avg: Math.round((grades.reduce((a, b) => a + b, 0) / grades.length) * 100) / 100,
+    subjects,
+    precise: !!rec,
+  }
+}
+
+// 모의(수능 예측) 평균등급 — 정시 참고용. 낮을수록 우수.
+export function moeuiAvgGrade(moeuiByGrade) {
+  const grades = SUBJECTS.map((s) => Number(moeuiByGrade?.[s])).filter((g) => g >= 1 && g <= 9)
+  if (!grades.length) return null
+  return Math.round((grades.reduce((a, b) => a + b, 0) / grades.length) * 100) / 100
+}
