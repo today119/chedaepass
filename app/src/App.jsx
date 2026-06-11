@@ -236,7 +236,7 @@ function ProfileCard({ profile, setProfile }) {
 }
 
 // ---------- 종점 계산기 (실기 + 프로필 자동 내신/수능) ----------
-function ScoreCalc({ rec, profile, onAddRecord }) {
+function ScoreCalc({ rec, profile, ipgy, onAddRecord }) {
   const univ = rec.대학
   const scorable = SCORABLE_SET.has(univ)
   const [gender, setGender] = useState(profile?.성별 || '남')
@@ -277,6 +277,13 @@ function ScoreCalc({ rec, profile, onAddRecord }) {
   const totalWeight = wSilgi + wNaesin + wSuneung
   const coveredPct = parts.reduce((a, [, , p]) => a + p, 0)
   const jongjeom = parts.length ? Math.round(parts.reduce((a, [, val, p]) => a + (val * p) / 100, 0) * 10) / 10 : null
+
+  // 작년 입결 비교: 학생 내신 평균등급 vs 어디가 교과 컷
+  const myGrades = SUBJECTS.map(s => Number(profile?.내신?.[s])).filter(g => g >= 1 && g <= 9)
+  const myNaesinAvg = myGrades.length ? Math.round((myGrades.reduce((a, b) => a + b, 0) / myGrades.length) * 100) / 100 : null
+  const ipgRow = (ipgy || []).find(t => t.학생부환산등급컷 && (t.학생부환산등급컷[0] != null || t.학생부환산등급컷[1] != null))
+  const cut50 = ipgRow?.학생부환산등급컷?.[0]
+  const cut70 = ipgRow?.학생부환산등급컷?.[1]
 
   function save() {
     onAddRecord({
@@ -351,6 +358,27 @@ function ScoreCalc({ rec, profile, onAddRecord }) {
         <div className="sc-need">종점 계산: 실기 입력 + 프로필 등급 필요</div>
       )}
 
+      {/* 작년 입결 비교 */}
+      <div className="cmp-box">
+        <div className="cmp-head">📊 작년 입결 비교</div>
+        <div className="cmp-row">
+          <span className="cmp-l">내 종점</span>
+          <b className="cmp-jj">{jongjeom != null ? jongjeom : '–'}</b>
+          <span className="cmp-vs">vs 작년 합격선</span>
+          <span className="cmp-soon">환산총점 입결 데이터 추가 예정</span>
+        </div>
+        {(cut50 != null || cut70 != null) ? (
+          <div className="cmp-naesin">
+            내신 평균 <b>{myNaesinAvg ?? '–'}</b>등급 vs 작년 교과 {cut50 != null && <>50%컷 {cut50}</>}{cut70 != null && <> · 70%컷 {cut70}</>}
+            {myNaesinAvg != null && cut70 != null && (
+              <span className={'cmp-tag ' + (myNaesinAvg <= cut70 ? 'cmp-ok' : 'cmp-no')}>{myNaesinAvg <= cut70 ? '내신 우위' : '내신 열위'}</span>
+            )}
+          </div>
+        ) : (
+          <div className="cmp-naesin cmp-muted">작년 교과 합격선 비공개 — 어디가 입시결과 참고</div>
+        )}
+      </div>
+
       <div className="sc-save">
         <input className="sc-memo" placeholder="상담 메모(선택)" value={memo} onChange={e => setMemo(e.target.value)} />
         <button className="sc-save-btn" onClick={save}>＋ 상담기록</button>
@@ -422,10 +450,10 @@ function Card({ rec, profile, onAddRecord }) {
         className={'silgi-toggle' + (scorable ? '' : pending ? ' silgi-toggle--pending' : showSilgi ? ' silgi-toggle--na' : '')}
         onClick={() => setOpenCalc(o => !o)}
       >
-        🎯 종점 계산{showSilgi ? ' · 실기' : ''}
+        🎯 {showSilgi ? '실기 기록 입력 · 종점' : '종점 계산'}
         {showSilgi && !scorable && (pending ? ' (보정 중)' : ' (채점표 미보유)')} {openCalc ? '▲' : '▼'}
       </button>
-      {openCalc && <ScoreCalc rec={rec} profile={profile} onAddRecord={onAddRecord} />}
+      {openCalc && <ScoreCalc rec={rec} profile={profile} ipgy={ipgy} onAddRecord={onAddRecord} />}
     </div>
   )
 }
