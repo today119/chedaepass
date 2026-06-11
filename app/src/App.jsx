@@ -135,6 +135,26 @@ function useLocalStorage(key, initial) {
   return [val, setVal]
 }
 
+// ---------- 구글 시트(GAS) 전송 ----------
+function buildSheetRow(rec) {
+  const p = rec._profile || {}
+  const n = p.내신 || {}, m = p.모의 || {}
+  const g = (o, k) => (o[k] != null && o[k] !== '' ? o[k] : '')
+  return {
+    날짜시각: new Date(rec.ts || Date.now()).toLocaleString('ko-KR'),
+    이름: p.이름 || '', 성별: p.성별 || '', 학년: p.학년 || '',
+    내신_국어: g(n, '국어'), 내신_영어: g(n, '영어'), 내신_수학: g(n, '수학'), 내신_사회: g(n, '사회'), 내신_과학: g(n, '과학'),
+    모의_국어: g(m, '국어'), 모의_영어: g(m, '영어'), 모의_수학: g(m, '수학'), 모의_사회: g(m, '사회'), 모의_과학: g(m, '과학'),
+    대학: rec.대학 || '', 학과: rec.학과 || '', 전형명: rec.전형 || '', 전형유형: rec.전형유형 || '', 모집시기: rec.type || '',
+    총점: rec.종점 != null ? rec.종점 : '', 내신비교: rec.내신비교 || '', 메모: rec.메모 || '',
+  }
+}
+function sendToSheet(url, rec) {
+  try {
+    fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(buildSheetRow(rec)) })
+  } catch (e) { /* 로컬 저장은 별도로 유지됨 */ }
+}
+
 // ---------- UI ----------
 function Chip({ active, onClick, children }) {
   return (
@@ -286,9 +306,13 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const cut70 = ipgRow?.학생부환산등급컷?.[1]
 
   function save() {
+    const naesinCmp = (myNaesinAvg != null && cut70 != null)
+      ? `내신 ${myNaesinAvg} vs 70%컷 ${cut70} (${myNaesinAvg <= cut70 ? '우위' : '열위'})`
+      : (myNaesinAvg != null ? `내신 평균 ${myNaesinAvg}등급` : '')
     onAddRecord({
-      대학: rec.대학, 학과: rec.학과, 전형: rec.전형 || rec.군 || '', type: rec.type,
-      종점: jongjeom, 메모: memo.trim(),
+      대학: rec.대학, 학과: rec.학과, 전형: rec.전형 || rec.군 || '', 전형유형: admissionType(rec), type: rec.type,
+      종점: jongjeom, 내신비교: naesinCmp, 메모: memo.trim(),
+      _profile: profile,
     })
     setSaved(true); setMemo('')
     setTimeout(() => setSaved(false), 1800)
@@ -481,7 +505,7 @@ function FGroup({ title, defaultOpen = true, count = 0, children }) {
 }
 
 // ---------- 필터 드로어 ----------
-function Drawer({ open, onClose, filters, profile, setProfile }) {
+function Drawer({ open, onClose, filters, profile, setProfile, gasUrl, setGasUrl }) {
   const { type, setType, types, setTypes, series, setSeries, silgi, setSilgi, regions, setRegions, estab, setEstab, jongmok, setJongmok, toggle } = filters
   return (
     <>
@@ -516,6 +540,16 @@ function Drawer({ open, onClose, filters, profile, setProfile }) {
           <FGroup title="설립 구분" count={estab !== '전체' ? 1 : 0} defaultOpen={false}>
             {['전체', '국공립', '사립'].map(e => <Chip key={e} active={estab === e} onClick={() => setEstab(e)}>{e}</Chip>)}
           </FGroup>
+
+          <div className="drawer-sec">📑 구글 시트 연동</div>
+          <div className="gas-box">
+            <input className="gas-input" placeholder="GAS 웹앱 URL (…/exec)" value={gasUrl} onChange={e => setGasUrl(e.target.value)} />
+            <div className="gas-hint">
+              {gasUrl && gasUrl.trim()
+                ? <span className="gas-on">✓ 연동됨 — ＋상담기록 저장 시 시트에도 한 줄 추가</span>
+                : '비워두면 이 브라우저에만 저장(localStorage). URL 넣으면 시트로도 전송.'}
+            </div>
+          </div>
         </div>
       </aside>
     </>
@@ -614,6 +648,7 @@ export default function App() {
 
   const [profile, setProfile] = useLocalStorage('chedae_profile', EMPTY_PROFILE)
   const [records, setRecords] = useLocalStorage('chedae_records', [])
+  const [gasUrl, setGasUrl] = useLocalStorage('chedae_gas_url', '')
 
   // 프로필 성별 → 필터 성별 동기화(최초)
   useEffect(() => {
@@ -625,7 +660,10 @@ export default function App() {
     setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v])
   }
   function addRecord(r) {
-    setRecords(prev => [{ id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), ts: Date.now(), ...r }, ...prev])
+    const { _profile, ...clean } = r
+    const rec = { id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), ts: Date.now(), ...clean }
+    setRecords(prev => [rec, ...prev])
+    if (gasUrl && gasUrl.trim()) sendToSheet(gasUrl.trim(), { ...rec, _profile })
   }
 
   const results = useMemo(() => {
@@ -660,7 +698,7 @@ export default function App() {
         <div className="topstat">{profile.이름 ? `${profile.이름}(${profile.성별})` : `총 ${ALL.length}개`}</div>
       </header>
 
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} filters={filters} profile={profile} setProfile={setProfile} />
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} filters={filters} profile={profile} setProfile={setProfile} gasUrl={gasUrl} setGasUrl={setGasUrl} />
 
       <div className="main">
         <div className="search-wrap">
