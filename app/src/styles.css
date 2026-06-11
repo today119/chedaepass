@@ -307,3 +307,6 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
 .gas-input:focus { border-color: var(--brand); outline: none; }
 .gas-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
 .gas-on { color: #047857; font-weight: 700; }
+
+/* 실기 종목 가중치 배지 */
+.silgi-w { color: #b45309; font-weight: 800; font-size: 11px; }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import raw from './data/admissions.json'
-import { silgiScore, silgiEventsOf, scorableUniversities } from './data/silgiScore.js'
+import { scoreOfEntry, silgiEventList, silgiWeightedScore, isSilgiScorable } from './data/silgiScore.js'
 import { univLink, ipgyeolFor } from './data/ipgyeolLookup.js'
 import { naesinScore, suneungScore, hasPreciseNaesin, SUBJECTS } from './data/scoreEngine.js'
 
@@ -10,7 +10,6 @@ const PENDING_SILGI_UNIVS = new Set([
   '단국대학교(천안)', '서원대학교', '선문대학교', '경상대학교', '동의대학교',
   '부경대학교', '제주대학교',
 ])
-const SCORABLE_SET = new Set(scorableUniversities)
 
 // ---------- 데이터 정규화 ----------
 const ALL = [...raw.susi, ...raw.jeongsi]
@@ -258,29 +257,25 @@ function ProfileCard({ profile, setProfile }) {
 // ---------- 종점 계산기 (실기 + 프로필 자동 내신/수능) ----------
 function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const univ = rec.대학
-  const scorable = SCORABLE_SET.has(univ)
+  const scorable = isSilgiScorable(univ, rec.학과)
   const [gender, setGender] = useState(profile?.성별 || '남')
   const [records, setRecords] = useState({})
   const [silgiManual, setSilgiManual] = useState('')
   const [memo, setMemo] = useState('')
   const [saved, setSaved] = useState(false)
 
-  const events = useMemo(() => {
-    if (!scorable) return []
-    const all = silgiEventsOf(univ).filter(e => e.성별 === gender || e.성별 == null)
-    const map = new Map()
-    for (const e of all) if (!map.has(e.종목)) map.set(e.종목, e)
-    return [...map.values()]
-  }, [univ, gender, scorable])
+  const events = useMemo(() => (scorable ? silgiEventList(univ, rec.학과, gender) : []), [univ, rec.학과, gender, scorable])
+  const weightedMode = events.some(e => (e.weight || 1) !== 1)
 
   const scored = events.map(ev => {
     const v = records[ev.종목] ?? ''
     const num = v === '' ? null : parseFloat(v)
-    const r = num == null || isNaN(num) ? null : silgiScore(univ, gender, ev.종목, num)
-    return { 종목: ev.종목, dir: ev.dir, input: v, score: r && r.ok ? r.score : null }
+    const sc = num == null || isNaN(num) ? null : scoreOfEntry(ev.entry, num)
+    return { 종목: ev.종목, dir: ev.dir, weight: ev.weight, input: v, score: sc }
   })
-  const got = scored.filter(s => s.score != null).map(s => s.score)
-  const silgiAuto = got.length ? Math.round((got.reduce((a, b) => a + b, 0) / got.length) * 10) / 10 : null
+  const weighted = scorable ? silgiWeightedScore(univ, rec.학과, gender, records) : null
+  const silgiAuto = weighted ? weighted.score : null
+  const usedCount = weighted ? weighted.used.length : 0
   const silgiVal = silgiAuto != null ? silgiAuto : (silgiManual !== '' && !isNaN(parseFloat(silgiManual)) ? parseFloat(silgiManual) : null)
 
   // 프로필 기반 내신·수능 환산
@@ -333,7 +328,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
               const s = scored.find(x => x.종목 === ev.종목)
               return (
                 <div key={ev.종목} className="silgi-row">
-                  <label className="silgi-ev">{ev.종목}<span className="silgi-dir">{ev.dir === 'higher' ? '↑클수록' : '↓작을수록'}</span></label>
+                  <label className="silgi-ev">{ev.종목}{weightedMode && <b className="silgi-w"> {ev.weight}%</b>}<span className="silgi-dir">{ev.dir === 'higher' ? '↑클수록' : '↓작을수록'}</span></label>
                   <input className="silgi-input" type="number" inputMode="decimal" placeholder="기록"
                     value={records[ev.종목] ?? ''} onChange={e => setRecords(p => ({ ...p, [ev.종목]: e.target.value }))} />
                   <span className={'silgi-score' + (s && s.score != null ? ' silgi-score--on' : '')}>
@@ -343,7 +338,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
               )
             })}
           </div>
-          {silgiAuto != null && <div className="silgi-avg">실기 평균 환산 <b>{silgiAuto}</b>점 <span className="muted">({got.length}종목)</span></div>}
+          {silgiAuto != null && <div className="silgi-avg">실기 {weightedMode ? '가중' : '평균'} 환산 <b>{silgiAuto}</b>점 <span className="muted">({usedCount}종목{weightedMode ? ' 가중' : ''})</span></div>}
         </>
       ) : (
         wSilgi > 0 && (
@@ -429,7 +424,7 @@ function Card({ rec, profile, onAddRecord, onOpenConsult }) {
   const showSilgi = hasSilgi(rec)
   const region = rec.type === '수시' ? regionOf(rec) : `${rec.군 || ''} · ${rec.소재지 || ''}`
   const sm = suneungMin(rec)
-  const scorable = SCORABLE_SET.has(rec.대학)
+  const scorable = isSilgiScorable(rec.대학, rec.학과)
   const pending = PENDING_SILGI_UNIVS.has(rec.대학)
   const link = univLink(rec.대학)
   const ipgy = ipgyeolFor(rec.대학, rec.학과, rec.type)
