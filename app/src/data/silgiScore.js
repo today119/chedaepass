@@ -65,12 +65,15 @@ export const scorableUniversities = Object.keys(scoringData)
  * 대학+학과로 실기 채점표 조회.
  * @returns {{source:'정밀'|'기본', 출처?:string, entries:[{성별,종목,dir,thr,weight}]}|null}
  */
-export function silgiTable(university, dept) {
+export function silgiTable(university, dept, 전형) {
   const p = preciseData[university]
   if (p && Array.isArray(p.표)) {
-    const matched = p.표.find(
-      t => !t.학과매칭 || t.학과매칭.length === 0 || t.학과매칭.some(k => (dept || '').includes(k)),
-    )
+    const matched = p.표.find(t => {
+      const dOk = !t.학과매칭 || t.학과매칭.length === 0 || t.학과매칭.some(k => (dept || '').includes(k))
+      // 전형매칭이 있으면 해당 전형명에 부분일치할 때만 적용(모집단위는 같지만 전형별 실기가 다른 경우 구분)
+      const jOk = !t.전형매칭 || t.전형매칭.length === 0 || t.전형매칭.some(k => (전형 || '').includes(k))
+      return dOk && jOk
+    })
     if (matched) return { source: '정밀', 출처: matched.출처, entries: matched.종목 }
   }
   const list = scoringData[university]
@@ -79,13 +82,13 @@ export function silgiTable(university, dept) {
 }
 
 /** 정밀/기본 채점표가 있는 모집단위인지 */
-export function isSilgiScorable(university, dept) {
-  return !!silgiTable(university, dept)
+export function isSilgiScorable(university, dept, 전형) {
+  return !!silgiTable(university, dept, 전형)
 }
 
 /** 입력 폼용 종목 목록(성별 매칭, 종목명 중복제거). dir·weight 포함 */
-export function silgiEventList(university, dept, gender) {
-  const tbl = silgiTable(university, dept)
+export function silgiEventList(university, dept, gender, 전형) {
+  const tbl = silgiTable(university, dept, 전형)
   if (!tbl) return []
   const seen = new Set()
   const out = []
@@ -102,8 +105,8 @@ export function silgiEventList(university, dept, gender) {
  * 종목별 기록(records: {종목: 값})으로 가중 실기 환산점(0~100) 계산.
  * @returns {{score:number, used:[{종목,score,weight}], source:string}|null}
  */
-export function silgiWeightedScore(university, dept, gender, records) {
-  const events = silgiEventList(university, dept, gender)
+export function silgiWeightedScore(university, dept, gender, records, 전형) {
+  const events = silgiEventList(university, dept, gender, 전형)
   if (!events.length) return null
   let wsum = 0, ssum = 0
   const used = []
@@ -117,7 +120,7 @@ export function silgiWeightedScore(university, dept, gender, records) {
     used.push({ 종목: ev.종목, score: sc, weight: w })
   }
   if (!wsum) return null
-  return { score: Math.round((ssum / wsum) * 10) / 10, used, source: silgiTable(university, dept).source }
+  return { score: Math.round((ssum / wsum) * 10) / 10, used, source: silgiTable(university, dept, 전형).source }
 }
 
 export default silgiScore
