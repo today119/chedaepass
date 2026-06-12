@@ -22,10 +22,15 @@ export function naesinScore(대학, naesinByGrade) {
   const subjects = precise ? rec.반영교과.기본 || SUBJECTS : SUBJECTS
   const vals = subjects.map((s) => gradeToScore(naesinByGrade[s], table)).filter((v) => v != null)
   if (!vals.length) return null
+  const score = Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+  const 만점 = precise ? (rec.내신만점 || 100) : null
+  const raw = 만점 != null ? Math.round((score / 100) * 만점 * 10) / 10 : null
   return {
-    score: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10,
+    score,
     precise,
     subjects,
+    만점,
+    raw,
     note: precise ? rec.출처 : '표준근사(참고치)',
   }
 }

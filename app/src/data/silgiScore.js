@@ -74,7 +74,7 @@ export function silgiTable(university, dept, 전형) {
       const jOk = !t.전형매칭 || t.전형매칭.length === 0 || t.전형매칭.some(k => (전형 || '').includes(k))
       return dOk && jOk
     })
-    if (matched) return { source: '정밀', 출처: matched.출처, entries: matched.종목 }
+    if (matched) return { source: '정밀', 출처: matched.출처, entries: matched.종목, 실기만점: matched.실기만점 || null }
   }
   const list = scoringData[university]
   if (list) return { source: '기본', entries: list.map(e => ({ ...e, weight: 1 })) }
@@ -96,7 +96,7 @@ export function silgiEventList(university, dept, gender, 전형) {
     if (e.성별 !== gender && e.성별 != null) continue
     if (seen.has(e.종목)) continue
     seen.add(e.종목)
-    out.push({ 종목: e.종목, dir: e.dir, weight: e.weight || 1, entry: e })
+    out.push({ 종목: e.종목, dir: e.dir, weight: e.weight || 1,만점: e.만점 ?? null, entry: e })
   }
   return out
 }
@@ -120,7 +120,12 @@ export function silgiWeightedScore(university, dept, gender, records, 전형) {
     used.push({ 종목: ev.종목, score: sc, weight: w })
   }
   if (!wsum) return null
-  return { score: Math.round((ssum / wsum) * 10) / 10, used, source: silgiTable(university, dept, 전형).source }
+  const tbl = silgiTable(university, dept, 전형)
+  const score = Math.round((ssum / wsum) * 10) / 10
+  const 만점 = tbl.실기만점 || null
+  // 원점 = 환산% × 실기만점 / 100 (모든 종목 입력 가정 시 실기 취득점)
+  const raw = 만점 != null ? Math.round((score / 100) * 만점 * 10) / 10 : null
+  return { score, used, source: tbl.source, 만점, raw }
 }
 
 export default silgiScore
