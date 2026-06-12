@@ -419,3 +419,9 @@ body { font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; ba
   .pager-num { min-width: 38px; }
   .results-range { font-size: 13px; }
 }
+
+/* 원점수(만점 기준) 표시 — 환산점 옆 작은 회색/파랑 */
+.silgi-raw{display:inline-block;margin-left:4px;font-style:normal;font-size:.82em;color:#2563eb;font-weight:600}
+.silgi-raw::before{content:"·\00a0"}
+.silgi-rawbig{color:#2563eb;font-weight:600}
+.silgi-jong-raw{color:#2563eb;font-weight:700}

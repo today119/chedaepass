@@ -272,7 +272,8 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
     const v = records[ev.종목] ?? ''
     const num = v === '' ? null : parseFloat(v)
     const sc = num == null || isNaN(num) ? null : scoreOfEntry(ev.entry, num)
-    return { 종목: ev.종목, dir: ev.dir, weight: ev.weight, input: v, score: sc }
+    const raw = sc != null && ev.만점 != null ? Math.round((sc / 100) * ev.만점 * 10) / 10 : null
+    return { 종목: ev.종목, dir: ev.dir, weight: ev.weight, 만점: ev.만점, input: v, score: sc, raw }
   })
   const weighted = scorable ? silgiWeightedScore(univ, rec.학과, gender, records, rec.전형) : null
   const silgiAuto = weighted ? weighted.score : null
@@ -293,6 +294,12 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
   const totalWeight = wSilgi + wNaesin + wSuneung
   const coveredPct = parts.reduce((a, [, , p]) => a + p, 0)
   const jongjeom = parts.length ? Math.round(parts.reduce((a, [, val, p]) => a + (val * p) / 100, 0) * 10) / 10 : null
+  // 원점(만점 기준) 총점 — 실기·내신 원점 합(수능은 근사라 제외). 만점 정보 있을 때만.
+  const silgiRawO = wSilgi > 0 && weighted && weighted.raw != null ? { raw: weighted.raw, man: weighted.만점 } : null
+  const naesinRawO = wNaesin > 0 && naesinR && naesinR.raw != null ? { raw: naesinR.raw, man: naesinR.만점 } : null
+  const rawTotal = (silgiRawO || naesinRawO) && wSuneung === 0
+    ? { raw: Math.round(((silgiRawO?.raw || 0) + (naesinRawO?.raw || 0)) * 10) / 10, man: (silgiRawO?.man || 0) + (naesinRawO?.man || 0) }
+    : null
 
   // 작년 입결 비교: 학교 기준 반영 평균등급(수시) / 모의 평균등급(정시) vs 작년 컷
   const isJeongsi = rec.type === '정시'
@@ -341,13 +348,13 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
                   <input className="silgi-input" type="number" inputMode="decimal" placeholder="기록"
                     value={records[ev.종목] ?? ''} onChange={e => setRecords(p => ({ ...p, [ev.종목]: e.target.value }))} />
                   <span className={'silgi-score' + (s && s.score != null ? ' silgi-score--on' : '')}>
-                    {s && s.input !== '' ? (s.score != null ? `${s.score}점` : '범위밖') : '—'}
+                    {s && s.input !== '' ? (s.score != null ? (<>{s.score}점{s.raw != null && s.만점 != null && <em className="silgi-raw">{s.raw}/{s.만점}</em>}</>) : '범위밖') : '—'}
                   </span>
                 </div>
               )
             })}
           </div>
-          {silgiAuto != null && <div className="silgi-avg">실기 {weightedMode ? '가중' : '평균'} 환산 <b>{silgiAuto}</b>점 <span className="muted">({usedCount}종목{weightedMode ? ' 가중' : ''})</span></div>}
+          {silgiAuto != null && <div className="silgi-avg">실기 {weightedMode ? '가중' : '평균'} 환산 <b>{silgiAuto}</b>점{weighted && weighted.raw != null && weighted.만점 && <span className="silgi-rawbig"> · 원점 {weighted.raw}/{weighted.만점}점</span>} <span className="muted">({usedCount}종목{weightedMode ? ' 가중' : ''})</span></div>}
         </>
       ) : (
         wSilgi > 0 && (
@@ -362,7 +369,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
       <div className="sc-auto">
         {wNaesin > 0 && (
           <span className={'sc-pill' + (naesinR ? '' : ' sc-pill--off')}>
-            내신 {naesinR ? `${naesinR.score}점` : '프로필 등급 필요'}
+            내신 {naesinR ? (<>{naesinR.score}점{naesinR.raw != null && naesinR.만점 && <em className="silgi-raw">{naesinR.raw}/{naesinR.만점}</em>}</>) : '프로필 등급 필요'}
             {naesinR && <em className={naesinR.precise ? 'sc-pre' : 'sc-apx'}>{naesinR.precise ? '정밀' : '근사'}</em>}
           </span>
         )}
@@ -376,7 +383,7 @@ function ScoreCalc({ rec, profile, ipgy, onAddRecord, modal }) {
 
       {jongjeom != null ? (
         <div className="silgi-jong">
-          <div className="silgi-jong-head">참고 총점 <b>{jongjeom}</b><span className="muted"> / 100</span></div>
+          <div className="silgi-jong-head">참고 총점 <b>{jongjeom}</b><span className="muted"> / 100</span>{rawTotal && rawTotal.man > 0 && <span className="silgi-jong-raw"> · 원점 {rawTotal.raw}/{rawTotal.man}점</span>}</div>
           <div className="silgi-jong-detail">
             {parts.map(([k, val, p]) => <span key={k}>{k} {val}×{p}%</span>)}
             {coveredPct < totalWeight && <span className="silgi-warn">· 미입력 {totalWeight - coveredPct}% 제외(참고치)</span>}
